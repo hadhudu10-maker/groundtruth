@@ -36,8 +36,13 @@
 // delivered 20 of 20 notes. We use 0.85 for both success rates, the 95% lower bound on 20 of 20
 // (rule of three), so the numbers lean low rather than high.
 //
-// Measured with the defaults, 200 runs (Fri 2026-11-20): see the final report of this module's session
-// and the SpreadPanel, which shows what measureSpread returns; nothing is copied here by hand.
+// Measured with the defaults, seeds 1..200 (Fri 2026-11-20, 3.7 s in Node). The rail reads measureSpread,
+// not these lines:
+//   networkDownReachPct     61   (median; reach climbs from hour 7 and stops at hour 16 when people sleep)
+//   familiesReconnectedPct   0   (0 of 1763 followed split families)
+// Sensitivity, 20 runs each: carry limit 2000 or 20000 still gives 0% (the limit is bundle room, 40 slots
+// against about 4000 notes written at once, not storage); 5% of residents in split families gives 9%,
+// and 15% with a carry limit of 2000. Every family member must hold every relative's note, a strict test.
 import { xoroshiro128plus } from 'pure-rand/generator/xoroshiro128plus';
 import { createSim } from '../sim';
 import type { ProofValues } from '../world';
