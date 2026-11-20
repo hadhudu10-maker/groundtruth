@@ -27,3 +27,6 @@ dist-ssr
 # Other Claude sessions' checkouts
 .claude/worktrees/
 .claude/launch.json
+
+# Planning notes stay local
+docs/
