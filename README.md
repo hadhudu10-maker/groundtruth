@@ -123,6 +123,20 @@ The animated QR only works in the production build (`npm run build && npm run pr
 | `src/ascent` | Surface verdict and the lottery |
 | `src/ui` | City view, problem rail, legend, story mode |
 
-Vite, React, TypeScript, Tailwind, a PWA for offline use, and Vitest. Libraries: `@noble/ed25519` and `@noble/hashes` (signatures and hashing), `ggwave` (data over sound), `qr`, `qr-scanner` and `@ngraveio/bc-ur` (QR and animated QR), `javascript-lp-solver` (fair split), `pure-rand` (seeded randomness). Family encryption uses the browser's built-in Web Crypto.
+Vite, React, TypeScript, Tailwind, a PWA for offline use, and Vitest. Libraries: `@noble/ed25519` and `@noble/hashes` (signatures and hashing), `ggwave` (data over sound), `qr`, `qr-scanner` and `@ngraveio/bc-ur` (QR and animated QR), `javascript-lp-solver` (fair split), `pure-rand` (seeded randomness), plus `framer-motion` and `lucide-react` for the interface. Family encryption uses the browser's built-in Web Crypto.
+
+## Docs
+
+The planning notes are kept as they were written during the week, numbered in the order they were made.
+
+| Doc | What it is |
+|---|---|
+| [08 Library Feasibility Research](docs/08%20Library%20Feasibility%20Research.md) | Which libraries could do sound, QR and signatures in a phone browser, checked against their sources |
+| [10 Final Build Plan and Requirements](docs/10%20Final%20Build%20Plan%20and%20Requirements.md) | The scope, the day-by-day plan, and what was cut and why |
+| [11 Plain English Guide](docs/11%20Plain%20English%20Guide%20and%20Team%20Brief.md) | The whole idea in plain words, and how the problems connect |
+| [12 Security Review and Threat Model](docs/12%20Security%20Review%20and%20Threat%20Model.md) | Who could attack this, what they can and cannot do, every finding and whether it is fixed |
+| [13 Submission Text](docs/13%20Submission%20Text.md) | The answers given on the judging form |
+
+`CLAUDE.md` holds the rules the AI coding sessions followed while building it.
 
 Built by Hadi Marabe (solo) for Patriot HackFest Fall 2026, with Claude Code.
