@@ -280,6 +280,9 @@ export function measureWarnings(options: MeasureOptions = {}): WarningReport {
  * The proof number for problem 1: the median hours of warning before a level goes dark, measured
  * over seeded harness runs. Never typed in; run it and it comes out of the simulation.
  */
+/** A report without the per-blackout list, small enough to post from a worker. */
+export type WarningSummary = Omit<WarningReport, 'details'>;
+
 export function blackoutWarningLeadHours(options: MeasureOptions = {}): Pick<ProofValues, 'blackoutWarningLeadHours'> {
   const report = measureWarnings(options);
   return report.warned > 0 ? { blackoutWarningLeadHours: report.medianLeadHours } : {};

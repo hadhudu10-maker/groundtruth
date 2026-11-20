@@ -3,7 +3,7 @@ import { BellRing, Timer, TriangleAlert, VolumeX, Zap, ZapOff } from 'lucide-rea
 import type { SimCityState, SimObservation } from '../sim';
 import { powerReadings } from './adapter';
 import { createCanary, type Alert } from './monitor';
-import { measureWarnings, type WarningReport } from './measure';
+import { measureWarnings, type WarningSummary } from './measure';
 
 const HOUR = 3600;
 
@@ -11,7 +11,9 @@ export interface WarningPanelProps {
   state: SimCityState;
   observations: readonly SimObservation[];
   /** A measurement the parent already has (for example from a cache). If absent, the panel offers to run one. */
-  measured?: WarningReport;
+  measured?: WarningSummary;
+  /** True while the parent is measuring in a worker: the panel then shows a note instead of its own button. */
+  pending?: boolean;
 }
 
 /** Simulated clock as "day 2, 19:00". */
@@ -28,9 +30,9 @@ const ago = (now: number, t: number) => {
 };
 
 // One measurement per page load: it replays 500 seeded runs, which takes several seconds.
-let cached: WarningReport | undefined;
+let cached: WarningSummary | undefined;
 
-export default function WarningPanel({ state, observations, measured }: WarningPanelProps) {
+export default function WarningPanel({ state, observations, measured, pending }: WarningPanelProps) {
   const now = state.time;
   const alerts = useMemo(() => {
     const canary = createCanary();
@@ -43,7 +45,7 @@ export default function WarningPanel({ state, observations, measured }: WarningP
   const silent = new Map<number, Alert[]>();
   for (const a of alerts) if (a.kind === 'silence') silent.set(a.level, [...(silent.get(a.level) ?? []), a]);
 
-  const [report, setReport] = useState<WarningReport | undefined>(measured ?? cached);
+  const [report, setReport] = useState<WarningSummary | undefined>(measured ?? cached);
   const [busy, setBusy] = useState(false);
   const run = () => {
     setBusy(true);
@@ -129,6 +131,8 @@ export default function WarningPanel({ state, observations, measured }: WarningP
               silence alarm (median {shown.silence.medianDelayHours} h after).
             </p>
           </dl>
+        ) : pending ? (
+          <p className="text-center text-[11px] text-slate-500">Measuring the lead time over 500 seeded runs...</p>
         ) : (
           <button
             type="button"

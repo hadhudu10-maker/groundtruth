@@ -3,3 +3,4 @@ export * from './adapter';
 export * from './monitor';
 export * from './measure';
 export { default as WarningPanel, type WarningPanelProps } from './WarningPanel';
+export { useWarningProof } from './useWarningProof';
