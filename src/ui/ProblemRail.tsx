@@ -1,26 +1,14 @@
 import { CheckCircle2, CircleDot } from 'lucide-react'
 import { PROBLEMS, type Problem, type ProofValues } from '../world'
+import { formatProof } from './format'
 
-function formatProof(p: Problem, value: number): string {
-  const n = Number.isInteger(value) ? String(value) : value.toFixed(1)
-  switch (p.proof.unit) {
-    case 'percent':
-      return `${n}%`
-    case 'hours':
-      return `${n} h`
-    case 'ratio':
-      return `${n}x`
-    case 'count':
-      return n
-  }
-}
-
-function ProblemCard({ problem, proof }: { problem: Problem; proof: ProofValues }) {
+function ProblemCard({ problem, proof, active }: { problem: Problem; proof: ProofValues; active: boolean }) {
   const value = proof[problem.proof.metric]
   const partial = problem.status === 'partial'
   return (
     <li
       data-testid={`problem-${problem.id}`}
+      data-story-active={active ? 'true' : undefined}
       className={`rounded-lg border p-3 ${partial ? 'border-amber-700/60 bg-amber-950/20' : 'border-slate-700 bg-slate-900'}`}
     >
       <div className="flex items-center justify-between gap-2">
@@ -62,13 +50,13 @@ function ProblemCard({ problem, proof }: { problem: Problem; proof: ProofValues 
 /** By the brief's number, so judges can match each card to the brief. */
 const BY_NUMBER = [...PROBLEMS].sort((a, b) => a.id - b.id)
 
-export function ProblemRail({ proof }: { proof: ProofValues }) {
+export function ProblemRail({ proof, activeIds = [] }: { proof: ProofValues; activeIds?: readonly number[] }) {
   return (
     <section aria-label="Problem rail">
       <h2 className="mb-2 text-xs font-semibold tracking-wide text-slate-300">PROBLEMS ANSWERED</h2>
       <ol className="flex flex-col gap-2">
         {BY_NUMBER.map((p) => (
-          <ProblemCard key={p.id} problem={p} proof={proof} />
+          <ProblemCard key={p.id} problem={p} proof={proof} active={activeIds.includes(p.id)} />
         ))}
       </ol>
     </section>
