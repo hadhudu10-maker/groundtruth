@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { createSim, demoScript, residentIdentity, runHarness } from '../sim';
+import { createSim, demoScript, residentIdentity } from '../sim';
 import { caseTagOf, NOTE_MAX_BYTES, SICK_MAX_TAGS, signNote, verifyNote, type SickBody, type VerifiedNote } from '../world';
 import { notebookFrom } from './notebook';
 import {
