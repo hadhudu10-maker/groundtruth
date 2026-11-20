@@ -11,11 +11,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ngraveio/bc-ur": "^1.1.13",
     "@noble/ed25519": "^3.2.0",
     "@noble/hashes": "^2.4.0",
     "framer-motion": "^14.14.0",
+    "ggwave": "^0.4.0",
     "lucide-react": "^1.74.0",
     "pure-rand": "^8.4.2",
+    "qr": "^0.7.2",
+    "qr-scanner": "^1.4.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
