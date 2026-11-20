@@ -1,3 +1,7 @@
 @import "tailwindcss";
 html, body, #root { height: 100%; }
 body { background: #0b0f14; color: #e6edf3; font-family: system-ui, sans-serif; }
+
+/* Story mode: the panel being talked about gets a ring and room above the caption bar. */
+[data-story] { scroll-margin-top: 12px; border-radius: 0.5rem; transition: box-shadow 0.3s; }
+[data-story-active="true"], li[data-story-active="true"] { box-shadow: 0 0 0 3px #34d399, 0 0 24px 4px rgba(52, 211, 153, 0.35); }
