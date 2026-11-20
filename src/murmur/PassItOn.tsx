@@ -11,6 +11,7 @@ import { createDevice, loadDevice } from './device';
 import type { Device } from './device';
 import { bundleOf, createCounterpart, encodeHave, handleSound, haveIds, ingest, planOffer } from './forward';
 import type { IngestSummary } from './forward';
+import { FamilyTab } from './FamilyTab';
 import { QrScan } from './QrScan';
 import { QrView } from './QrView';
 import { SoundReassembler, frameForSound, playMessage, startListening, startLiveEngine } from './sound';
@@ -96,6 +97,7 @@ function Screen({ device }: { device: Device }) {
   const store = useMemo(() => createNoteStore(device), [device]);
   useSyncExternalStore(store.subscribe, store.version);
   const [who] = useState(createCounterpart);
+  const [tab, setTab] = useState<'notes' | 'family'>('notes');
   const [, bump] = useReducer((n: number) => n + 1, 0);
 
   const [log, setLog] = useState<LogLine[]>([]);
@@ -371,6 +373,25 @@ function Screen({ device }: { device: Device }) {
         </p>
       </header>
 
+      <nav className="grid grid-cols-2 gap-1 rounded-lg bg-slate-800 p-1" aria-label="Tabs">
+        {(['notes', 'family'] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            aria-pressed={tab === t}
+            className={`min-h-12 rounded-md text-base font-semibold ${tab === t ? 'bg-sky-600 text-white' : 'text-slate-300'}`}
+          >
+            {t === 'notes' ? 'Notes' : 'Family'}
+          </button>
+        ))}
+      </nav>
+
+      <div hidden={tab !== 'family'}>
+        <FamilyTab device={device} store={store} />
+      </div>
+
+      <div hidden={tab !== 'notes'} className="space-y-4">
       <section className={card}>
         <h2 className="text-lg font-semibold">1. Pair</h2>
         <p className="text-sm text-slate-300">Show your card on one device and scan it on the other, then swap. That is how each device learns the other's key.</p>
@@ -528,6 +549,7 @@ function Screen({ device }: { device: Device }) {
           </div>
         )}
       </section>
+      </div>
     </main>
   );
 }
