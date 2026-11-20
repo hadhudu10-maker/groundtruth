@@ -13,8 +13,13 @@
 // pick a seed that favours anyone. Changing the seed after the commit fails the hash check, and the
 // ranking has no free choice left once both values are public.
 //
-// Honest limits: the organizer still picks the close time, so can choose among a handful of closes
-// (one per volunteer note) once they know the seed, and could add their own throwaway volunteers.
+// The close time is fixed by the commit: entries close exactly LOTTERY_ENTRY_WINDOW_S after the seed
+// commit's signed time, and a re-run rejects any other close ('close-time-changed'). Without this the
+// organizer, who knows the seed, could watch the volunteers arrive and close at whichever moment gave
+// the crew they wanted. (Lead review, 2026-11-20.)
+//
+// Honest limits: the organizer could still enter throwaway volunteers of their own, which only pairing
+// with known residents prevents, and could refuse to reveal and so cancel a draw (visible to everyone).
 // A copy that is missing a legitimate volunteer note cannot reproduce the close digest and says so
 // ('roll-mismatch') instead of giving a different crew.
 //
@@ -29,6 +34,14 @@ import { headDigest, notebookFrom } from '../ledger';
 import { Rng, subSeed } from './rng';
 
 export const VOLUNTEER_TEXT = 'volunteer: first up';
+
+/** Entries close this long after the seed commit, fixed in advance so the organizer has no choice. */
+export const LOTTERY_ENTRY_WINDOW_S = 3600;
+
+/** The only valid close time for a seed commit. */
+export function closeTimeFor(seedCommit: SignedNote): number {
+  return seedCommit.time + LOTTERY_ENTRY_WINDOW_S;
+}
 
 export function volunteerNote(identity: Identity, seq: number, time: number): VerifiedNote {
   return signNote({ seq, time, body: { kind: 'text', text: VOLUNTEER_TEXT } }, identity);
@@ -90,6 +103,7 @@ export type DrawFailure =
   | 'no-commit'
   | 'seed-changed'
   | 'not-closed'
+  | 'close-time-changed'
   | 'commit-after-close'
   | 'not-revealed'
   | 'reveal-before-close'
@@ -133,6 +147,7 @@ export function runDraw(nb: Notebook, organizer: KeyIdHex, k: number): DrawResul
   const close = heads.find((h) => h.seq > first.seq);
   if (!close || close.body.kind !== 'commit') return { ok: false, reason: heads.length ? 'commit-after-close' : 'not-closed' };
   if (close.time < first.time) return { ok: false, reason: 'commit-after-close' };
+  if (close.time !== closeTimeFor(first)) return { ok: false, reason: 'close-time-changed' };
 
   const reveals = commits('lottery-reveal');
   const reveal = reveals[0];
@@ -198,7 +213,7 @@ export function buildLotteryScenario(seed: number, opts: { volunteers?: number; 
   const vols = volunteers.map((v, i) => volunteerNote(v, 1, LOTTERY_T0 + 60 + i * 20));
   // Ordinary traffic in the same notebook, so the roll has to pick its notes out of a crowd.
   const chatter = volunteers.slice(0, 8).map((v, i) => signNote({ seq: 2, time: LOTTERY_T0 + 90 + i * 20, body: { kind: 'text', text: `hello from ${v.name}` } }, v));
-  const closeTime = LOTTERY_T0 + 60 + nVol * 20 + 60;
+  const closeTime = closeTimeFor(commit);
   const close = closeNote(organizer, commit, vols, 2, closeTime);
   const lateNotes = late.map((l, i) => volunteerNote(l, 1, closeTime + 30 + i * 10));
   const reveal = revealNote(organizer, secretSeed, 3, closeTime + 120);

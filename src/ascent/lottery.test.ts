@@ -6,6 +6,8 @@ import { Rng } from './rng';
 import {
   buildLotteryScenario,
   closeNote,
+  closeTimeFor,
+  LOTTERY_ENTRY_WINDOW_S,
   drawCrew,
   lotteryProof,
   measureLottery,
@@ -30,12 +32,31 @@ function setup(volunteers = 12, k = 4) {
   const people = Array.from({ length: volunteers }, (_, i) => who(`v${i}`, i));
   const commit = seedCommitNote(organizer, seed, 1, T0);
   const vols = people.map((p, i) => volunteerNote(p, 1, T0 + 10 + i));
-  const closeTime = T0 + 1000;
+  const closeTime = closeTimeFor(commit);
   const close = closeNote(organizer, commit, vols, 2, closeTime);
   const reveal = revealNote(organizer, seed, 3, closeTime + 10);
   const all: VerifiedNote[] = [commit, ...vols, close, reveal];
   return { organizer, seed, people, commit, vols, close, reveal, all, closeTime, k };
 }
+
+describe('the close time is fixed by the commit', () => {
+  test('entries close exactly one window after the seed commit', () => {
+    const s = setup();
+    expect(s.close.time).toBe(T0 + LOTTERY_ENTRY_WINDOW_S);
+    expect(runDraw(notebookFrom(s.all), s.organizer.keyId, s.k).ok).toBe(true);
+  });
+
+  test('an organizer who closes at a moment of their choosing is caught', () => {
+    const s = setup();
+    // Close early, right after the first few volunteers, hoping for a better crew.
+    for (const t of [T0 + 13, T0 + LOTTERY_ENTRY_WINDOW_S - 1, T0 + LOTTERY_ENTRY_WINDOW_S + 1]) {
+      const picked = closeNote(s.organizer, s.commit, s.vols, 2, t);
+      const reveal = revealNote(s.organizer, s.seed, 3, t + 10);
+      const r = runDraw(notebookFrom([s.commit, ...s.vols, picked, reveal]), s.organizer.keyId, s.k);
+      expect(r).toEqual({ ok: false, reason: 'close-time-changed' });
+    }
+  });
+});
 
 describe('the draw', () => {
   test('the same crew comes out of notebook copies that received the notes in different orders', () => {
