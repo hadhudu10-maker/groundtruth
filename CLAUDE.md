@@ -12,7 +12,6 @@ Pitch: "a group chat that works with no internet, where nobody can fake or delet
 - `docs/10 Final Build Plan and Requirements.md`: the plan, day by day, with model and effort per step. It overrides anything else.
 - `docs/11 Plain English Guide and Team Brief.md`: the plain-English explanation.
 - `docs/08 Library Feasibility Research.md`: source-checked library verdicts.
-- Obsidian copy (reading copy): `~/Desktop/Obsidian Vaults/Fall 2026/Fall 2026/Patriot HackFest/`. Overview note there has the decision log.
 
 ## Scope (locked)
 Problems 1, 2, 4, 7, 8, 9, 13 fully; 14 partially (lottery only). Cut for good: 3, 5, 6, 10, 11, 12, 15.

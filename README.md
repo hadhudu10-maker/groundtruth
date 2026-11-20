@@ -4,6 +4,15 @@
 
 Live: https://groundtruth-one-flame.vercel.app (open it once online; after that it works offline)
 
+![The Groundtruth dashboard: the Hollow side on, the problem rail with a measured number for each problem, and the legend](docs/img/dashboard.png)
+
+## Judge it in 2 minutes
+
+1. Open https://groundtruth-one-flame.vercel.app and press **Play the story**. Eight steps, about 2.5 minutes, each captioned with the brief's own words and the measured number. Let it play: the warning (step 4) and the "do not drink" flag (step 6) happen live.
+2. Press **Rewrite history** on the notebook panel and watch the check fail.
+3. On the lottery panel, press **Organizer swaps the seed** and watch the draw get rejected.
+4. The phone half (two real devices passing signed notes with every radio off) needs two devices, so it is shown in the demo video. To try it yourself, open https://groundtruth-one-flame.vercel.app/#pass on two phones.
+
 Residents of the Hollow write **signed notes**, **pass them hand to hand** by sound and QR code with every radio off, keep them in a **notebook nobody can erase**, and **do math on the pile**. Every feature below is one kind of note plus one calculation.
 
 Real at human scale, simulated at city scale: the phone app really works between two devices in airplane mode, and a seeded simulation of the Hollow shows what happens across the whole city. Every number on the site and in the video comes from seeded simulations (the city simulation, and a separate seeded model of the surface), never typed in by hand.

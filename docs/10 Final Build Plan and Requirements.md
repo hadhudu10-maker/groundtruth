@@ -65,8 +65,6 @@ Residents write **signed notes**, **pass them hand to hand** with no network, ke
 ## Day by day
 
 ### Tuesday Nov 17: Foundation and device tests (5 hours)
-*Class load today: CYSE 430 presentation 4:30 PM, MATH 213 quiz, STAT 344.*
-
 | Time | Work | Model, effort |
 |---|---|---|
 | 45 min | Repo, app shell, deploy to an HTTPS address | Sonnet, low |
@@ -80,8 +78,6 @@ Residents write **signed notes**, **pass them hand to hand** with no network, ke
 **If a test fails:** sound fails on iPhone, then sound runs Mac to Mac or one direction only and QR carries the rest. Charger sensing fails, then residents tap "my power flickered" by hand.
 
 ### Wednesday Nov 18: Pass it on, warning, fair split (9 to 10 hours)
-*ENGH 302 post due 11:45 PM. Do it first.*
-
 | Block | Work | Problems | Model, effort |
 |---|---|---|---|
 | Morning, parallel | **Pass it on:** device identity, signed notes that fit 140 bytes, duplicates and replays rejected, store and forward, wired into the resident app | 7 | **Top, high** |
@@ -108,8 +104,6 @@ If you stopped here you would have a real entry for 1, 2, 7 and 8.
 **Gate, 6 PM:** the notebook catches a rewritten history and shows the true outbreak estimate. **Gate, 10 PM: feature freeze.** Nothing new after this.
 
 ### Friday Nov 20: Ship (8 to 9 hours)
-*Also due tonight: STAT 344 HW 6 and ENGH 302 replies.*
-
 | Time | Work | Model, effort |
 |---|---|---|
 | 9 to 11 AM | Story mode: one click plays the whole chain with the brief's wording as captions. Bug bash on the live site. | Sonnet, medium. Top for stuck bugs. |
