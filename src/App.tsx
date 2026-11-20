@@ -1,15 +1,9 @@
 import { useState } from 'react'
-import { CityCrossSection, FIXTURE_PROOF, FixtureControls, ProblemRail, makeFixtureCity } from './ui'
-import type { CityState, LevelState } from './world'
+import { CityCrossSection, ProblemRail, SimControls, useSim } from './ui'
 
 export default function App() {
-  // Fixture state for now. The merge step replaces this with the real simulation.
-  const [city, setCity] = useState<CityState>(makeFixtureCity)
-  const [selectedId, setSelectedId] = useState(12)
-
-  const setPower = (id: number, power: LevelState['power']) =>
-    setCity((c) => ({ ...c, levels: c.levels.map((l) => (l.id === id ? { ...l, power } : l)) }))
-  const setNetwork = (network: CityState['network']) => setCity((c) => ({ ...c, network }))
+  const { sim, state, proof, playing, setPlaying, reset } = useSim()
+  const [selectedId, setSelectedId] = useState(sim.levelCount)
 
   return (
     <main className="mx-auto max-w-6xl p-3 sm:p-5">
@@ -21,10 +15,17 @@ export default function App() {
       </header>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex flex-col gap-3">
-          <CityCrossSection city={city} selectedId={selectedId} onSelect={setSelectedId} />
-          <FixtureControls city={city} selectedId={selectedId} onPower={setPower} onNetwork={setNetwork} />
+          <SimControls
+            sim={sim}
+            state={state}
+            selectedId={selectedId}
+            playing={playing}
+            onPlaying={setPlaying}
+            onReset={reset}
+          />
+          <CityCrossSection city={state} selectedId={selectedId} onSelect={setSelectedId} />
         </div>
-        <ProblemRail proof={FIXTURE_PROOF} />
+        <ProblemRail proof={proof} />
       </div>
     </main>
   )
