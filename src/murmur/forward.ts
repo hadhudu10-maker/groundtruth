@@ -50,7 +50,8 @@ export function decodeHave(bytes: Uint8Array): string[] | null {
 // Family notes are carried by strangers who cannot open them. When a carrier meets a relative, the
 // relative's notes should go first instead of waiting behind thousands of others. So a resident can
 // say which families they belong to: one sound message of up to 34 four-byte family tags. The tags are
-// already in clear in every family note, so this reveals nothing new. The city-scale model in
+// in clear in every family note, but a WANT message ties them to the person asking, so anyone in
+// earshot learns which families that person belongs to (security review M4). The city-scale model in
 // spread.ts measures what this does (wantFirst).
 
 /** First byte of a WANT message. */

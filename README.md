@@ -72,9 +72,15 @@ The notebook is an append-only Merkle log in the style of Certificate Transparen
 
 ## Security and limits
 
-See [docs/12 Security Review and Threat Model.md](docs/12%20Security%20Review%20and%20Threat%20Model.md).
+- Every note is signed (Ed25519, strict checking). Nobody can write in your name or change a note without it being caught.
+- Every note goes through one door: signature, then duplicate, replay, stale and future checks. Notes from people you have not met are carried for others but shown as unchecked.
+- Family statuses are sealed with AES-GCM under a family key swapped in person. Strangers carry them but cannot read them, and cannot replay an old status as new.
+- The notebook is a Merkle log (RFC 6962). If anyone rewrites history after you saved a head, the check fails.
+- The lottery is commit, fixed close, reveal: the organizer cannot pick the seed, the closing moment, or (alone) the crew.
+- Limits: a signature proves who wrote a note, not that it is true. Sound can be overheard and jammed. Author IDs, times and family and case tags are visible to anyone, and "ask for my family" tells people nearby which families you belong to. Names and levels on cards are trusted on first scan.
+- Limits: a stolen phone gives away its keys (no lock or revocation yet), and an organizer working with an accomplice could still bias the lottery.
 
-<!-- SECURITY-SUMMARY: pasted from the security review -->
+Full threat model, with every finding and whether it is fixed: [docs/12 Security Review and Threat Model.md](docs/12%20Security%20Review%20and%20Threat%20Model.md).
 
 ## Try it
 
