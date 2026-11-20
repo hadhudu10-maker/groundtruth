@@ -38,7 +38,7 @@ describe('rewrite history attempt', () => {
 });
 
 describe('panels render at phone width with real numbers', () => {
-  const dash = /[–—]/;
+  const dash = /[\u2013\u2014]/;
 
   test('NotebookPanel', () => {
     const html = renderToStaticMarkup(<NotebookPanel notebook={report.notebook} />);
