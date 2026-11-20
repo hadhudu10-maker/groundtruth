@@ -7,3 +7,4 @@ export * from './sound';
 export * from './hex';
 export * from './store';
 export * from './forward';
+export * from './family';
