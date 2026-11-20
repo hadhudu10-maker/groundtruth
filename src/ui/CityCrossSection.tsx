@@ -35,7 +35,17 @@ function Windows({ level }: { level: LevelState }) {
   )
 }
 
-function LevelRow({ level, selected, onSelect }: { level: LevelState; selected: boolean; onSelect: () => void }) {
+/**
+ * Rock strata: each level's stone gets darker and warmer the deeper it sits ("the deeper you live, the
+ * darker, hotter and sicker it gets"). Level 1 is cool grey-brown, the deepest is hot rust.
+ */
+function stratum(id: number, count: number): string {
+  const t = count > 1 ? (id - 1) / (count - 1) : 0
+  const mix = (a: number, b: number) => Math.round(a + (b - a) * t)
+  return `rgb(${mix(42, 58)}, ${mix(36, 26)}, ${mix(29, 20)})`
+}
+
+function LevelRow({ level, count, selected, onSelect }: { level: LevelState; count: number; selected: boolean; onSelect: () => void }) {
   const out = level.power === 'out'
   const undercount = level.sick.actual > level.sick.official
   return (
@@ -47,7 +57,7 @@ function LevelRow({ level, selected, onSelect }: { level: LevelState; selected: 
       data-testid={`level-${level.id}`}
       data-power={level.power}
       data-water={level.water}
-      animate={{ backgroundColor: out ? '#05070a' : level.power === 'flicker' ? '#1f1a0e' : '#131b26' }}
+      animate={{ backgroundColor: out ? '#0c0907' : level.power === 'flicker' ? '#3a2a10' : stratum(level.id, count) }}
       transition={{ duration: 0.4 }}
       className={`flex w-full items-center gap-2 border-b border-slate-800 px-2 py-2 text-left sm:gap-3 sm:px-3 ${
         selected ? 'outline outline-2 -outline-offset-2 outline-emerald-400' : ''
@@ -94,7 +104,7 @@ export function CityCrossSection({
   return (
     <section aria-label="Cross-section of the Hollow" className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
       <div className="flex items-center justify-between bg-slate-800 px-3 py-2 text-xs">
-        <span className="font-semibold tracking-wide text-slate-200">THE HOLLOW, SIDE ON</span>
+        <span className="font-[family-name:var(--font-display)] text-base font-semibold text-slate-100">The Hollow, side on</span>
         <span
           data-testid="network-status"
           data-network={city.network}
@@ -107,7 +117,7 @@ export function CityCrossSection({
       <div className="h-2 bg-gradient-to-b from-slate-950 to-slate-800" aria-hidden />
       <div>
         {city.levels.map((l) => (
-          <LevelRow key={l.id} level={l} selected={l.id === selectedId} onSelect={() => onSelect?.(l.id)} />
+          <LevelRow key={l.id} level={l} count={city.levels.length} selected={l.id === selectedId} onSelect={() => onSelect?.(l.id)} />
         ))}
       </div>
     </section>

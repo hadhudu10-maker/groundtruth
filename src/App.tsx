@@ -61,10 +61,11 @@ function Dashboard() {
 
   return (
     <main className="mx-auto max-w-6xl p-3 sm:p-5">
-      <header className="mb-4">
-        <h1 className="text-2xl font-semibold">Groundtruth</h1>
-        <p className="text-sm text-slate-400">
-          Signed notes, passed hand to hand, kept in a notebook nobody can erase.
+      <header className="mb-5 border-b border-amber-500/30 pb-4">
+        <h1 className="text-5xl leading-none text-amber-300 sm:text-6xl">Groundtruth</h1>
+        <p className="mt-2 max-w-2xl text-base text-slate-200">
+          The Directorate owns the network and the numbers. Residents of the Hollow pass signed notes hand to hand,
+          keep them in a notebook nobody can erase, and count them up themselves.
         </p>
         <StoryMode sim={sim} proof={allProof} onReset={reset} onFocus={setStoryIds} />
       </header>

@@ -53,7 +53,7 @@ const BY_NUMBER = [...PROBLEMS].sort((a, b) => a.id - b.id)
 export function ProblemRail({ proof, activeIds = [] }: { proof: ProofValues; activeIds?: readonly number[] }) {
   return (
     <section aria-label="Problem rail">
-      <h2 className="mb-2 text-xs font-semibold tracking-wide text-slate-300">PROBLEMS ANSWERED</h2>
+      <h2 className="mb-2 text-lg font-semibold text-slate-100">Problems answered</h2>
       <ol className="flex flex-col gap-2">
         {BY_NUMBER.map((p) => (
           <ProblemCard key={p.id} problem={p} proof={proof} active={activeIds.includes(p.id)} />

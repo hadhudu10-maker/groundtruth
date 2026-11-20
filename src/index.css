@@ -1,7 +1,77 @@
 @import "tailwindcss";
-html, body, #root { height: 100%; }
-body { background: #0b0f14; color: #e6edf3; font-family: system-ui, sans-serif; }
 
-/* Story mode: the panel being talked about gets a ring and room above the caption bar. */
-[data-story] { scroll-margin-top: 12px; border-radius: 0.5rem; transition: box-shadow 0.3s; }
-[data-story-active="true"], li[data-story-active="true"] { box-shadow: 0 0 0 3px #34d399, 0 0 24px 4px rgba(52, 211, 153, 0.35); }
+/*
+ * The Hollow's palette. The whole dashboard is drawn in Tailwind's slate, emerald and sky classes;
+ * redefining those tokens here re-tints every panel at once without touching a component.
+ *   slate   -> rock: warm mine stone instead of cold blue-grey
+ *   emerald -> verdigris: oxidised copper pipe, the "verified / lit" signal
+ *   sky     -> groundwater: cool, desaturated
+ * Amber stays the sodium tunnel lamp (light, flicker) and red stays rust (alarm).
+ */
+@theme {
+  --color-slate-50: #f4eee4;
+  --color-slate-100: #e9dfce;
+  --color-slate-200: #d6c8b1;
+  --color-slate-300: #bbaa90;
+  --color-slate-400: #9c8b73;
+  --color-slate-500: #7a6b57;
+  --color-slate-600: #5c4f40;
+  --color-slate-700: #43392e;
+  --color-slate-800: #2e2720;
+  --color-slate-900: #221c16;
+  --color-slate-950: #16120e;
+
+  --color-emerald-50: #eef6f1;
+  --color-emerald-100: #d5eadf;
+  --color-emerald-200: #add3bf;
+  --color-emerald-300: #8cc2a5;
+  --color-emerald-400: #6fa889;
+  --color-emerald-500: #4f8c6c;
+  --color-emerald-600: #3d7055;
+  --color-emerald-700: #2f5743;
+  --color-emerald-800: #233f31;
+  --color-emerald-900: #1a2f25;
+  --color-emerald-950: #0f1c16;
+
+  --color-sky-300: #9cc3c9;
+  --color-sky-400: #78aab2;
+  --color-sky-500: #5a8f98;
+  --color-sky-600: #46747c;
+
+  /* Painted level signage. Ships with macOS and iOS; Windows and others fall back to a narrow sans. */
+  --font-display: "DIN Condensed", "Bahnschrift SemiCondensed", "Bahnschrift", "Arial Narrow", sans-serif;
+
+  /* Machined, not pillowy. */
+  --radius-md: 3px;
+  --radius-lg: 4px;
+}
+
+html, body, #root { min-height: 100%; }
+
+body {
+  color: var(--color-slate-100);
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  /* A shaft: the last of the lamp light at the top, bedrock below, and a faint grain of stone. */
+  background-color: var(--color-slate-950);
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(232, 163, 61, 0.14), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.9 0 0 0 0 0.8 0 0 0 0 0.6 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-attachment: fixed, scroll;
+}
+
+/* Headings take the signage face; each component keeps its own size. The condensed face runs small, so nudge it. */
+@layer base {
+  h1, h2, h3, summary { font-family: var(--font-display); letter-spacing: 0.01em; }
+  h1 { font-weight: 700; }
+  h2, h3, summary { font-size-adjust: 0.56; }
+}
+
+:focus-visible { outline: 2px solid #e8a33d; outline-offset: 2px; }
+
+/* Story mode: the panel being talked about is lit by the sodium lamp, with room above the caption bar. */
+[data-story] { scroll-margin-top: 12px; border-radius: var(--radius-lg); transition: box-shadow 0.3s; }
+[data-story-active="true"], li[data-story-active="true"] { box-shadow: 0 0 0 2px #e8a33d, 0 0 28px 6px rgba(232, 163, 61, 0.28); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
