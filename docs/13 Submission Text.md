@@ -35,11 +35,11 @@ Every number comes from seeded simulations (pure-rand), measured over hundreds o
 
 ## Why did you choose to build this? What was your thinking?
 
-The brief describes a Hollow where the Directorate controls the network and publishes numbers that do not match what people see. The obvious project is a better dashboard for the Directorate. I built the opposite: tools for residents that work without the Directorate's permission.
+In the Hollow, people die from what they don't know in time: that the power and air are about to fail, that the tap water is bad, that the outbreak is far bigger than announced, whether their family on another level is alive. The Directorate holds that knowledge and controls the network. So I asked what keeps people alive when they cannot trust or reach the Directorate.
 
-Most of the problems share one root: people cannot share information they can trust. So I built three shared pieces (signed notes, passing them hand to hand, and a notebook nobody can erase) and made every answer one kind of note plus one calculation. That is what connects the problems. Notes that survive a network shutdown (7) carry family news (8) and power reports, which predict blackouts (1) and prove the unfair split (2). Water and sick reports in the same notebook catch bad water (4) and the true outbreak (9). By then residents trust the notebook enough to believe a surface reading (13) and a fair lottery (14).
+My answer: survival information must travel, be trusted and be counted without permission. A note passed phone to phone still arrives when the network is cut. A signature means nobody can plant a false "the water is safe". A notebook nobody can erase means evidence cannot vanish. Counting the notes turns scattered fear into actions: leave the level before the blackout, stop drinking from one line, send medicine where the real cases are, find your family.
 
-I chose depth over breadth: seven problems answered fully and one partly, each with a number measured in simulation, rather than thin answers to all fifteen. I also stated the limits plainly: residents cannot flip the Directorate's switches, but they can prove what is happening.
+Each answer is one kind of note plus one calculation, so every problem strengthens the next. Residents still cannot flip the Directorate's switches, but they are no longer kept in the dark. They gain proof to demand a fair share, and one day to decide whether the surface is safe to go home to.
 
 ## Who built what? How did you collaborate?
 
