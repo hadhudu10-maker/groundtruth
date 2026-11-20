@@ -2,8 +2,16 @@ import { lazy, Suspense, useState } from 'react'
 import { CityCrossSection, Legend, ProblemRail, SimControls, useSim } from './ui'
 
 const DevTest = lazy(() => import('./murmur/DevTest'))
+const PassItOn = lazy(() => import('./murmur/PassItOn'))
 
 export default function App() {
+  if (location.hash === '#pass') {
+    return (
+      <Suspense fallback={<p className="p-4 text-slate-400">Loading...</p>}>
+        <PassItOn />
+      </Suspense>
+    )
+  }
   if (location.hash === '#devtest') {
     return (
       <Suspense fallback={<p className="p-4 text-slate-400">Loading device tests...</p>}>

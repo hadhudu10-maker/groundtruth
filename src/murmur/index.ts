@@ -5,3 +5,5 @@ export * from './device';
 export * from './results';
 export * from './sound';
 export * from './hex';
+export * from './store';
+export * from './forward';

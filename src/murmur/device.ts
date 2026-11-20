@@ -20,7 +20,7 @@ export interface KeyValueStore {
   setItem(key: string, value: string): void;
 }
 
-function defaultStore(): KeyValueStore | null {
+export function defaultStore(): KeyValueStore | null {
   try {
     return globalThis.localStorage ?? null;
   } catch {
