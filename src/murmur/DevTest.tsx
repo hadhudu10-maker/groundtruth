@@ -21,7 +21,7 @@ import {
   startListening,
   startLiveEngine,
 } from './sound';
-import type { HeardMessage, Listener, LiveEngine, SoundMode, SoundProtocol } from './sound';
+import type { HeardMessage, ListenStats, Listener, LiveEngine, SoundMode, SoundProtocol } from './sound';
 import { btnPrimary, btnSecondary, card } from './styles';
 
 const RESULTS_KEY = 'gt.devtest.results.v1';
@@ -127,6 +127,8 @@ export default function DevTest() {
   // ---------------------------------------------------------------- test 2: signed note by sound
   const [protocol, setProtocol] = useState<SoundProtocol>('normal');
   const [mode, setMode] = useState<SoundMode>('binary');
+  const [volume, setVolume] = useState<'50' | '100'>('100');
+  const [stats, setStats] = useState<ListenStats | null>(null);
   const liveRef = useRef<Promise<LiveEngine> | null>(null);
   const listenerRef = useRef<Listener | null>(null);
   const reassemblerRef = useRef(new SoundReassembler());
@@ -178,6 +180,7 @@ export default function DevTest() {
     listenerRef.current?.stop();
     listenerRef.current = null;
     setListening(false);
+    setStats(null);
   }, []);
 
   const toggleListen = async () => {
@@ -191,7 +194,7 @@ export default function DevTest() {
       reassemblerRef.current = new SoundReassembler();
       pendingOnset.current = null;
       listenStart.current = performance.now();
-      listenerRef.current = await startListening(live, onHeard);
+      listenerRef.current = await startListening(live, onHeard, setStats);
       setListening(true);
       setHeard(null);
     } catch (e) {
@@ -216,7 +219,7 @@ export default function DevTest() {
       let soundS = 0;
       for (let i = 0; i < frames.length; i++) {
         setSendMsg(`Sending ${note.bytes.length} byte note (${mode}, ${protocol}), part ${i + 1} of ${frames.length}. Hold the devices close.`);
-        const p = playMessage(live, frames[i]!, protocol);
+        const p = playMessage(live, frames[i]!, protocol, Number(volume));
         soundS += p.durationS;
         await p.ended;
         if (i < frames.length - 1) await new Promise((r) => setTimeout(r, 1500));
@@ -497,6 +500,14 @@ export default function DevTest() {
             { id: 'base64', label: 'Fallback: base64 x2' },
           ]}
         />
+        <Seg
+          value={volume}
+          onChange={setVolume}
+          options={[
+            { id: '50', label: 'Send volume: medium' },
+            { id: '100', label: 'Send volume: loud' },
+          ]}
+        />
         <div className="grid gap-2 sm:grid-cols-2">
           <button type="button" className={btnPrimary} onClick={sendNote}>
             Send a signed note by sound
@@ -506,6 +517,17 @@ export default function DevTest() {
           </button>
         </div>
         {sendMsg && <p className="text-sm text-slate-200">{sendMsg}</p>}
+        {listening && stats && (
+          <div className="space-y-1 rounded-lg bg-slate-800 p-2 text-xs text-slate-300">
+            <div className="h-3 w-full overflow-hidden rounded bg-slate-700">
+              <div className="h-full bg-emerald-400" style={{ width: `${Math.min(100, Math.round(stats.peak * 400))}%` }} />
+            </div>
+            <div>
+              Mic level (jumps when sound plays). Loudest so far {(stats.maxPeak * 100).toFixed(1)}%. Audio {stats.contextState}, {stats.sampleRate} Hz, {stats.chunks} chunks.
+            </div>
+          </div>
+        )}
+        {listening && !stats && <p className="text-xs text-amber-300">Listening, but no audio data is arriving from the microphone yet.</p>}
         {listening && !heard && <p className="text-sm text-slate-300">Listening. Nothing heard yet.</p>}
         {heard && <Badge ok={heard.ok}>{heard.text}</Badge>}
         {soundErr && <p className="text-sm text-rose-300">{soundErr}</p>}

@@ -200,8 +200,9 @@ export function playMessage(
   live: LiveEngine,
   data: Uint8Array,
   protocol: SoundProtocol,
+  volume = 100,
 ): { durationS: number; ended: Promise<void> } {
-  const wave = encodeWaveform(live.engine, data, protocol);
+  const wave = encodeWaveform(live.engine, data, protocol, volume);
   const buffer = live.ctx.createBuffer(1, wave.length, live.ctx.sampleRate);
   buffer.getChannelData(0).set(wave);
   const source = live.ctx.createBufferSource();
@@ -225,11 +226,27 @@ export interface Listener {
   stop(): void;
 }
 
+/** What the microphone is doing right now, for the on-screen meter. */
+export interface ListenStats {
+  /** Audio callbacks since Listen started. Zero means the browser is not feeding us audio. */
+  chunks: number;
+  /** Loudest sample in the last quarter second, 0..1. */
+  peak: number;
+  /** Loudest peak since Listen started. */
+  maxPeak: number;
+  contextState: string;
+  sampleRate: number;
+}
+
 const LOUD_RMS = 0.01;
 const QUIET_GAP_MS = 1500;
 
 /** Opens the microphone with ggwave's own constraints (all processing off) and decodes what it hears. */
-export async function startListening(live: LiveEngine, onMessage: (m: HeardMessage) => void): Promise<Listener> {
+export async function startListening(
+  live: LiveEngine,
+  onMessage: (m: HeardMessage) => void,
+  onStats?: (s: ListenStats) => void,
+): Promise<Listener> {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false },
   });
@@ -237,11 +254,27 @@ export async function startListening(live: LiveEngine, onMessage: (m: HeardMessa
   const processor = live.ctx.createScriptProcessor(1024, 1, 1);
   let lastLoud = -Infinity;
   let onset = 0;
+  let chunks = 0;
+  let peak = 0;
+  let maxPeak = 0;
+  let lastStats = 0;
   processor.onaudioprocess = (e) => {
     const samples = e.inputBuffer.getChannelData(0);
     const now = performance.now();
     let sum = 0;
-    for (let i = 0; i < samples.length; i++) sum += samples[i]! * samples[i]!;
+    for (let i = 0; i < samples.length; i++) {
+      const v = samples[i]!;
+      sum += v * v;
+      const a = Math.abs(v);
+      if (a > peak) peak = a;
+    }
+    chunks++;
+    if (peak > maxPeak) maxPeak = peak;
+    if (onStats && now - lastStats > 250) {
+      lastStats = now;
+      onStats({ chunks, peak, maxPeak, contextState: live.ctx.state, sampleRate: live.ctx.sampleRate });
+      peak = 0;
+    }
     if (Math.sqrt(sum / samples.length) > LOUD_RMS) {
       if (now - lastLoud > QUIET_GAP_MS) onset = now;
       lastLoud = now;
