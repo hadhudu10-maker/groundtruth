@@ -1,62 +1,55 @@
-# Submission text (draft)
+# Submission form answers
 
-Fill in the blank marked TODO (the video link), read it once, then paste each section into the matching field on the judging platform. Numbers are the ones the live site shows; all come from the seeded simulation.
+One section per field on the judging platform, in the form's order. Each text answer is under the 200-word limit. Paste the text under each heading, not the heading itself.
 
 ---
 
 ## Project name
 Groundtruth
 
-## One line
-A group chat that works with no internet, where nobody can fake or delete a message, and that adds everyone's messages up to find the truth.
+## What is your project?
 
-## Links
-- Live site: https://groundtruth-one-flame.vercel.app (press "Play the story")
-- Phone app: https://groundtruth-one-flame.vercel.app/#pass
-- Code: https://github.com/hadhudu10-maker/groundtruth
-- Video: TODO (link after upload)
+Groundtruth is a group chat for the people of the Hollow that keeps working when the Directorate shuts the network down, where nobody can fake or delete a message, and that adds everyone's messages up to find the truth.
 
-## Team
-Hadi Marabe (solo team)
+Residents write short signed notes and pass them phone to phone by sound or by QR code, with every radio off. Every note goes into a shared notebook that nobody can secretly change. Then the notes are counted, and the counting answers seven of the brief's problems in full and one in part:
 
-## Track and problems
-Life underground. Both paths: life underground (1, 2, 4, 7, 8, 9) and the way back up (13, 14). Problems 1, 2, 4, 7, 8, 9 and 13 in full, 14 in part (who goes first).
+- Power notes warn a level about 1.5 hours before its blackout (1).
+- The same notes prove the deep levels get far less power, and show a fair split (2).
+- Tap tests flag a bad water line before the bad water reaches people (4).
+- Families split across levels learn who is safe (8).
+- Two incomplete sick lists reveal about 4 real cases for every official one, and where to send supplies (9).
+- Witnessed probe readings let a doubter and a believer agree on whether the surface is safe (13).
+- A lottery anyone can re-check picks who goes up first (14).
 
-## What it does
-In the Hollow the Directorate owns the network and the numbers. Groundtruth gives that power to residents. They write signed notes, pass them hand to hand by sound and QR code with every radio off, keep them in a notebook nobody can erase, and do math on the pile. Every answer below is one kind of note plus one calculation, so each one builds on the last.
+Residents stop depending on the Directorate's word: they hold proof it cannot hide or fake.
 
-**1. Blackout warning.** A plugged-in device writes a power note when its charger loses power. Flicker notes rising on a level, or a level going silent, raise a warning that travels phone to phone. Measured over 500 seeded runs: a median of 1.5 hours of warning, 88% of blackouts warned.
+## How did you build it?
 
-**2. Fair split.** The same power notes, added up per level, prove the split is unfair, and a fair plan (the worst-off level first) is computed next to it. In a week with 10% less generation, the deepest level got 63.3% of the top level's power hours; a calm week gives about 98%.
+An offline-first web app (PWA): Vite, React, TypeScript and Tailwind, deployed on Vercel. After one load it runs with no network on any phone or laptop.
 
-**4. Bad water.** Tap test notes are counted per recycler line. Once bad reports pass a threshold, that line gets a "do not drink" warning. 67.2% of residents on the bad line are flagged before the bad water reaches them. On the dashboard the flag appears live as residents' signed tap tests pile up.
+Every note is at most 140 bytes, the most one ggwave sound message carries: a 17-byte header, up to 59 bytes of content, and an Ed25519 signature (@noble/ed25519, strict verification). One gate checks every incoming note: signature, duplicates, replays, stale and future times. Notes travel by sound (ggwave, 9 to 14 seconds each) or by animated QR (qr, qr-scanner, bc-ur fountain codes, 40 notes per bundle), with store and forward. Family notes are sealed with AES-GCM through the browser's Web Crypto.
 
-**7. No network.** Signed 140-byte notes cross by sound (one note in 9 to 14 seconds) or by animated QR (40 at a time), stored and forwarded. Tested on a Mac and an iPhone in airplane mode. Across the simulated city, 61% of residents hold a warning 24 hours after it is written, with the network down.
+The notebook is an append-only Merkle log in the style of Certificate Transparency, with inclusion and consistency proofs, so a rewritten history fails visibly. The math: flicker-rate and silence detection, a maximin fair split (javascript-lp-solver), Chapman capture-recapture, a Bayesian doubter and believer, and a commit, fixed-close, reveal lottery.
 
-**8. Families.** Family notes are locked to a family key swapped in person (the browser's own AES-GCM), carried by anyone and opened only by family. "Ask for my family" makes carriers hand over your family's notes first, which more than triples delivery: 31% of split families hear "safe" from a relative on another level within 48 hours, with the whole city writing at once (9% without it).
+Every number comes from seeded simulations (pure-rand), measured over hundreds of runs. 321 automated tests, a security review with a threat model, and a real test on a Mac and an iPhone in airplane mode.
 
-**9. The real outbreak.** Self reports and clinic tallies are signed into the notebook. How much the two lists overlap gives the true case count (capture-recapture): 4.2 real cases for every official one, and a ranking of where to send supplies.
+## Why did you choose to build this? What was your thinking?
 
-**13. The surface.** The rules for "safe" are published first. Probe readings count only once independent witnesses on different levels sign them. A doubter and a believer update on the same evidence until they agree: 20 witness signatures on median, agreeing on the truth in 98% of 500 runs. The verdict is a signed note anyone can pass on.
+The brief describes a Hollow where the Directorate controls the network and publishes numbers that do not match what people see. The obvious project is a better dashboard for the Directorate. I built the opposite: tools for residents that work without the Directorate's permission.
 
-**14. Who goes first (partial).** A lottery anyone can re-run: the organizer commits to a secret seed, entries close at a time fixed in advance, then the seed is revealed. 200 residents re-running it from notebooks in different orders all get the same crew. We do not compare suits, domes and outposts.
+Most of the problems share one root: people cannot share information they can trust. So I built three shared pieces (signed notes, passing them hand to hand, and a notebook nobody can erase) and made every answer one kind of note plus one calculation. That is what connects the problems. Notes that survive a network shutdown (7) carry family news (8) and power reports, which predict blackouts (1) and prove the unfair split (2). Water and sick reports in the same notebook catch bad water (4) and the true outbreak (9). By then residents trust the notebook enough to believe a surface reading (13) and a fair lottery (14).
 
-Underneath all of it is the notebook: an append-only Merkle log. Someone tries to rewrite history on screen and the check fails.
+I chose depth over breadth: seven problems answered fully and one partly, each with a number measured in simulation, rather than thin answers to all fifteen. I also stated the limits plainly: residents cannot flip the Directorate's switches, but they can prove what is happening.
 
-## How we built it
-Vite, React, TypeScript and Tailwind, as an offline-first web app (PWA) that works on any phone after one load. Ed25519 signatures (@noble/ed25519), data over sound (ggwave), animated QR (qr, qr-scanner, bc-ur), a fair split solver (javascript-lp-solver) and seeded simulations (pure-rand) that produce every number we show: one of the city, one of the surface. About 320 automated tests. We froze one shared contract (the note format) on day one so the parts could be built in parallel.
+## Who built what? How did you collaborate?
 
-## What is real and what is simulated
-Real, on devices: signing, passing notes by sound and QR in airplane mode, pairing, family encryption, the notebook and its proofs, a Mac noticing its charger is pulled. Simulated, seeded and repeatable: the city of 12 levels, how notes spread across it, blackouts, recyclers, the outbreak, surface readings and the lottery's re-runs.
+Solo project by Hadi Marabe. I came up with the concept, chose the scope and the plan, ran the device tests on real phones, and directed and reviewed every part. I used Claude Code (AI tools are allowed under rule 4) as a pair programmer: one session per module, each checked with tests and merged one at a time, plus an AI-assisted code review and security review whose fixes I approved.
 
-## Challenges
-Fitting a signed note into 140 bytes, the most one sound message carries. Getting sound to work both ways on an iPhone in airplane mode. Finding that family notes drown when everyone writes at once (9%), and fixing it with "ask for my family" rather than by changing the model. Closing a way for the lottery organizer to choose the crew, found in our own review.
+## Submit your Github Repository Link
+https://github.com/hadhudu10-maker/groundtruth
 
-## What we are proud of
-Two real phones passing a signed note with every radio off. Every number on screen traced to a seeded run, with the assumptions written down. An honest threat model with each finding fixed or stated.
+## Submit your Demo Video Link (must be available to view); 3 Minutes Maximum
+TODO: paste the link after uploading. Set it to Public or Unlisted (YouTube) or "Anyone with the link" (Google Drive), and check it plays in a private browser window.
 
-## What we do not solve
-Residents cannot flip the Directorate's switches; we give proof and a fair plan to demand. We do not get a probe past the machines; we make a reading believable. Sound is slow. City-scale numbers are simulated. A stolen phone gives away its keys, and an organizer with an accomplice could still bias the lottery.
-
-## What is next
-Routing family notes toward the right level, a lock and key revocation for lost phones, and volunteers adding their own randomness to the lottery.
+## Submit a Demo URL (Optional)
+https://groundtruth-one-flame.vercel.app
