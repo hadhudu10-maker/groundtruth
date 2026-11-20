@@ -11,17 +11,17 @@ Groundtruth
 
 Groundtruth is a group chat for the people of the Hollow that keeps working when the Directorate shuts the network down, where nobody can fake or delete a message, and that adds everyone's messages up to find the truth.
 
-Residents write short signed notes and pass them phone to phone by sound or by QR code, with every radio off. Every note goes into a shared notebook that nobody can secretly change. Then the notes are counted, and the counting answers seven of the brief's problems in full and one in part:
+Residents write short signed notes and pass them phone to phone by sound or QR code, with every radio off. Every note goes into a shared notebook nobody can secretly change. Then the notes are counted, answering seven of the brief's problems fully and one partly:
 
 - Power notes warn a level about 1.5 hours before its blackout (1).
 - The same notes prove the deep levels get far less power, and show a fair split (2).
-- Tap tests flag a bad water line before the bad water reaches people (4).
+- Tap tests flag a bad water line before people drink it (4).
 - Families split across levels learn who is safe (8).
-- Two incomplete sick lists reveal about 4 real cases for every official one, and where to send supplies (9).
-- Witnessed probe readings let a doubter and a believer agree on whether the surface is safe (13).
+- Two incomplete sick lists reveal about 4 real cases per official one, and where supplies should go (9).
+- Witnessed probe readings let a doubter and a believer agree whether the surface is safe (13).
 - A lottery anyone can re-check picks who goes up first (14).
 
-Residents stop depending on the Directorate's word: they hold proof it cannot hide or fake.
+Residents stop depending on the Directorate's word: they hold proof it cannot fake.
 
 ## How did you build it?
 
