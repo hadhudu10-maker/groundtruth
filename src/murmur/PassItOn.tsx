@@ -472,10 +472,7 @@ function Screen({ device }: { device: Device }) {
         </label>
         <p className="text-sm text-slate-200">{recommended}</p>
         <p className="text-xs text-slate-400">
-          Known to be on their side: {stats.confirmed} confirmed, {stats.offered} offered this session.{' '}
-          <button type="button" className="underline" onClick={() => { who.forgetOffered(); bump(); }}>
-            Send everything again
-          </button>
+          Known to be on their side: {stats.confirmed} confirmed, {stats.offered} offered this session.
         </p>
 
         <div className="grid grid-flow-col auto-cols-fr gap-1 rounded-lg bg-slate-800 p-1">
@@ -493,6 +490,18 @@ function Screen({ device }: { device: Device }) {
         <div className="grid gap-2 sm:grid-cols-2">
           <button type="button" className={btnPrimary} disabled={!offer.items.length || !!busy} onClick={sendNext}>
             Send 1 note by sound
+          </button>
+          <button
+            type="button"
+            className={btnSecondary}
+            disabled={!!busy || stats.offered === 0}
+            onClick={() => {
+              who.forgetOffered();
+              addLog('info', 'Everything you hold will be offered again.');
+              bump();
+            }}
+          >
+            Send everything again
           </button>
           <button type="button" className={btnSecondary} disabled={!!busy} onClick={sendHave}>
             Tell them what I hold (sound)
