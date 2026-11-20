@@ -52,3 +52,5 @@ export {
   type WaterRunReport,
   type WaterMeasurement,
 } from './water';
+export { measureLedgerProof, type LedgerProof } from './proof';
+export { useLedgerProof } from './useLedgerProof';

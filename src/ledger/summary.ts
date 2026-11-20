@@ -14,7 +14,7 @@ export function summarize(body: NoteBody): string {
     case 'sick':
       return body.source === 'self'
         ? `level ${body.level}: self report`
-        : `level ${body.level}: clinic tally, ${body.caseTags.length} cases`;
+        : `level ${body.level}: clinic tally, ${body.caseTags.length} ${body.caseTags.length === 1 ? 'case' : 'cases'}`;
     case 'surface':
       return `probe ${body.probe}, ${body.readings.length} readings`;
     case 'witness':

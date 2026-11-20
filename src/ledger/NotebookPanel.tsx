@@ -167,7 +167,7 @@ export function NotebookPanel({
             <div className="mt-2">
               <Check ok={inclusion.ok}>
                 {inclusion.ok
-                  ? `Entry #${pickedEntry.index} is in the notebook: ${inclusion.hashes} hashes lead from it to the head.`
+                  ? `Entry #${pickedEntry.index} is in the notebook: ${inclusion.hashes} ${inclusion.hashes === 1 ? 'hash leads' : 'hashes lead'} from it to the head.`
                   : `Entry #${pickedEntry.index} does not match the head.`}
               </Check>
             </div>
