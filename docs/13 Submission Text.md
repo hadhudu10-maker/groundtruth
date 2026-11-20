@@ -1,6 +1,6 @@
 # Submission text (draft)
 
-Fill in the two blanks marked TODO, read it once, then paste each section into the matching field on the judging platform. Numbers are the ones the live site shows; all come from the seeded simulation.
+Fill in the blank marked TODO (the video link), read it once, then paste each section into the matching field on the judging platform. Numbers are the ones the live site shows; all come from the seeded simulation.
 
 ---
 
@@ -17,7 +17,7 @@ A group chat that works with no internet, where nobody can fake or delete a mess
 - Video: TODO (link after upload)
 
 ## Team
-TODO (names exactly as on the roster)
+Hadi Marabe (solo team)
 
 ## Track and problems
 Life underground. Both paths: life underground (1, 2, 4, 7, 8, 9) and the way back up (13, 14). Problems 1, 2, 4, 7, 8, 9 and 13 in full, 14 in part (who goes first).

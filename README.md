@@ -116,4 +116,4 @@ The animated QR only works in the production build (`npm run build && npm run pr
 
 Vite, React, TypeScript, Tailwind, a PWA for offline use, and Vitest. Libraries: `@noble/ed25519` and `@noble/hashes` (signatures and hashing), `ggwave` (data over sound), `qr`, `qr-scanner` and `@ngraveio/bc-ur` (QR and animated QR), `javascript-lp-solver` (fair split), `pure-rand` (seeded randomness). Family encryption uses the browser's built-in Web Crypto.
 
-Built for Patriot HackFest Fall 2026 with Claude Code.
+Built by Hadi Marabe (solo) for Patriot HackFest Fall 2026, with Claude Code.
