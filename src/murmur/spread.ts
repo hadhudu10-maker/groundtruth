@@ -16,6 +16,8 @@
 //     (`soundSeconds` of playing, 9.3 to 13.5 s per note, each note arriving with `soundNoteSuccess`).
 //   - A relay keeps at most `carryLimit` notes it cannot check (store.ts PARKED_MAX = 200). Notes of
 //     its own family are paired and kept for good.
+//   - With `wantFirst`, the receiver asks for its family (a WANT message) and the giver sends those
+//     notes first, each taking one place, before filling the rest of the room as usual.
 //
 // Problem 7, networkDownReachPct: one warning note is written by a random resident on the deepest level
 // at the start. Being the newest note it rides at the front of every bundle. Reach = share of residents
@@ -41,12 +43,14 @@
 // Measured with the defaults, seeds 1..200 (Fri 2026-11-20, 3.7 s in Node). The rail reads measureSpread,
 // not these lines:
 //   networkDownReachPct     61   (median; reach climbs from hour 7 and stops at hour 16 when people sleep)
-//   familiesReconnectedPct   9   (162 of 1763 followed split families heard "safe" from a relative on
+//   familiesReconnectedPct  31   (546 of 1763 followed split families heard "safe" from a relative on
 //                                another level; this is the rail label's question. Strict version, every
-//                                member holding every relative's note: 0 of 1763.)
-// Sensitivity, 20 runs each: carry limit 2000 or 20000 still gives 0% (the limit is bundle room, 40 slots
-// against about 4000 notes written at once, not storage); 5% of residents in split families gives 9%,
-// and 15% with a carry limit of 2000. Every family member must hold every relative's note, a strict test.
+//                                member holding every relative's note: 4 of 1763.)
+// "Ask for my family" (wantFirst, the WANT message in forward.ts) is what moves this number: without it
+// the same runs give 9% (162 of 1763), because a relative's note waits behind about 4000 others for one
+// of 40 places in a bundle. Asking costs one sound message, counted against the sound budget.
+// Tried and dropped (40 runs): a "courier mode" carrying 5000 unchecked notes gave 13% alone and nothing
+// on top of asking. Carry limits of 2000 or 20000 do not help either: the limit is bundle room, not storage.
 import { xoroshiro128plus } from 'pure-rand/generator/xoroshiro128plus';
 import { createSim } from '../sim';
 import type { ProofValues } from '../world';
@@ -65,6 +69,8 @@ export interface SpreadParams {
   soundNoteSuccess: number;
   carryLimit: number;
   splitShare: number;
+  /** "Ask for my family": the receiver names its family tag and the giver sends those notes first. */
+  wantFirst: boolean;
 }
 
 export const DEFAULT_SPREAD: SpreadParams = {
@@ -81,6 +87,7 @@ export const DEFAULT_SPREAD: SpreadParams = {
   soundNoteSuccess: 0.85,
   carryLimit: 200, // store.ts PARKED_MAX
   splitShare: 0.25,
+  wantFirst: true, // the app does this: the WANT message in forward.ts
 };
 
 const TRACKED_MAX = 32;
@@ -184,15 +191,27 @@ export function runSpread(seed: number, overrides: Partial<SpreadParams> = {}): 
       room = Math.floor(P.soundSeconds / (9.3 + 4.2 * float()));
       noteOk = P.soundNoteSuccess;
     }
+    // Asking for your family is one more sound message before the hand-off. Count its time against
+    // the same budget (it does not use QR room, which is shown after).
+    if (P.wantFirst && !qr && famMask[b]) room -= 1;
     if (reach[a] && !reach[b]) {
       room -= 1; // the warning is newest, so it goes first
       if (noteOk >= 1 || float() < noteOk) (reach[b] = 1), reached++;
     }
-    const lacking = held[a]! & ~held[b]!;
+    let lacking = held[a]! & ~held[b]!;
     if (!lacking || room <= 0) return;
-    const p = Math.min(1, room / (popcount(lacking) * scale)) * noteOk;
     let got = 0;
-    for (let x = lacking; x; x &= x - 1) {
+    if (P.wantFirst) {
+      // b named its family tag: a sends b's family notes first, each one its own slot.
+      for (let x = lacking & famMask[b]!; x && room > 0; x &= x - 1) {
+        const bit = x & -x;
+        room -= 1;
+        if (noteOk >= 1 || float() < noteOk) got |= bit;
+      }
+      lacking &= ~famMask[b]!;
+    }
+    const p = room <= 0 || !lacking ? 0 : Math.min(1, room / (popcount(lacking) * scale)) * noteOk;
+    for (let x = lacking; p > 0 && x; x &= x - 1) {
       const bit = x & -x;
       if (p >= 1 || float() < p) got |= bit;
     }

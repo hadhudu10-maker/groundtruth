@@ -8,7 +8,8 @@
 // same notes again. A wrong guess only costs time: a note they already hold is dropped quietly.
 //
 // Transport rule from the plan: sound carries one note, an animated QR bundle carries many.
-import type { KeyIdHex, NoteId } from '../world';
+import { FAMILY_TAG_BYTES, NOTE_HEADER_BYTES, NOTE_KINDS, NOTE_VERSION } from '../world';
+import type { FamilyTagHex, KeyIdHex, NoteId } from '../world';
 import { hexToBytes, bytesToHex } from './hex';
 import { SOUND_MAX_MESSAGE_BYTES } from './sound';
 import type { NoteStore, Outcome } from './store';
@@ -44,6 +45,43 @@ export function decodeHave(bytes: Uint8Array): string[] | null {
   return ids;
 }
 
+// ---------------------------------------------------------------- the WANT message ("ask for my family")
+//
+// Family notes are carried by strangers who cannot open them. When a carrier meets a relative, the
+// relative's notes should go first instead of waiting behind thousands of others. So a resident can
+// say which families they belong to: one sound message of up to 34 four-byte family tags. The tags are
+// already in clear in every family note, so this reveals nothing new. The city-scale model in
+// spread.ts measures what this does (wantFirst).
+
+/** First byte of a WANT message. */
+export const WANT_MARK = 0x7c;
+export const WANT_MAX_TAGS = Math.floor((SOUND_MAX_MESSAGE_BYTES - 1) / FAMILY_TAG_BYTES);
+
+export function encodeWant(tags: readonly FamilyTagHex[]): Uint8Array {
+  const take = [...new Set(tags)].slice(0, WANT_MAX_TAGS);
+  const out = new Uint8Array(1 + take.length * FAMILY_TAG_BYTES);
+  out[0] = WANT_MARK;
+  take.forEach((t, i) => out.set(hexToBytes(t), 1 + i * FAMILY_TAG_BYTES));
+  return out;
+}
+
+/** Family tags from a WANT message, or null if these bytes are not one. */
+export function decodeWant(bytes: Uint8Array): FamilyTagHex[] | null {
+  if (bytes.length < 1 || bytes.length > SOUND_MAX_MESSAGE_BYTES) return null;
+  if (bytes[0] !== WANT_MARK || (bytes.length - 1) % FAMILY_TAG_BYTES !== 0) return null;
+  const tags: FamilyTagHex[] = [];
+  for (let pos = 1; pos < bytes.length; pos += FAMILY_TAG_BYTES) tags.push(bytesToHex(bytes.subarray(pos, pos + FAMILY_TAG_BYTES)));
+  return tags;
+}
+
+const FAMILY_HEAD_BYTE = (NOTE_VERSION << 4) | (NOTE_KINDS.indexOf('family') + 1);
+
+/** The family tag of a family note's wire bytes (the frozen layout puts it first in the payload), else null. */
+export function familyTagOfBytes(bytes: Uint8Array): FamilyTagHex | null {
+  if (bytes[0] !== FAMILY_HEAD_BYTE || bytes.length < NOTE_HEADER_BYTES + FAMILY_TAG_BYTES) return null;
+  return bytesToHex(bytes.subarray(NOTE_HEADER_BYTES, NOTE_HEADER_BYTES + FAMILY_TAG_BYTES));
+}
+
 /** The IDs to put in a HAVE message: everything we hold or carry, newest first. */
 export function haveIds(store: NoteStore): NoteId[] {
   return [...store.all(), ...store.parked()]
@@ -58,6 +96,9 @@ export interface Counterpart {
   setResident(keyId: KeyIdHex | null): void;
   /** They told us (a HAVE message). */
   learnHave(shortIds: readonly string[]): void;
+  /** They asked for their families (a WANT message): those notes go first. */
+  learnWant(tags: readonly FamilyTagHex[]): void;
+  wants(tag: FamilyTagHex): boolean;
   /** They sent us this note, so they hold it. */
   learnHolds(id: NoteId): void;
   /** We offered these (sound or QR). Counted as held until `forgetOffered`, since there is no receipt. */
@@ -74,7 +115,12 @@ export function createCounterpart(): Counterpart {
   let resident: KeyIdHex | null = null;
   const confirmed = new Set<string>();
   const offered = new Set<string>();
+  const wanted = new Set<FamilyTagHex>();
   return {
+    learnWant: (tags) => {
+      for (const t of tags) wanted.add(t);
+    },
+    wants: (tag) => wanted.has(tag),
     setResident: (keyId) => {
       resident = keyId;
     },
@@ -92,6 +138,7 @@ export function createCounterpart(): Counterpart {
       resident = null;
       confirmed.clear();
       offered.clear();
+      wanted.clear();
     },
     holds: (note) => {
       const s = shortIdOf(note.id);
@@ -133,7 +180,12 @@ export function planOffer(store: NoteStore, who: Counterpart): Offer {
   for (const p of store.parked()) {
     if (!who.holds(p)) items.push({ id: p.id, author: p.author, seq: p.seq, time: p.time, bytes: p.bytes, verified: false });
   }
-  items.sort(newestFirst);
+  // Notes for the families they asked for go first, then everything else, newest first.
+  const isWanted = (i: OfferItem) => {
+    const tag = familyTagOfBytes(i.bytes);
+    return tag !== null && who.wants(tag);
+  };
+  items.sort((a, b) => Number(isWanted(b)) - Number(isWanted(a)) || newestFirst(a, b));
   return { items, recommended: items.length === 0 ? 'none' : items.length === 1 ? 'sound' : 'qr' };
 }
 
@@ -175,6 +227,7 @@ export function ingest(store: NoteStore, who: Counterpart, notes: readonly Uint8
 
 export type SoundResult =
   | { kind: 'have'; shortIds: string[] }
+  | { kind: 'want'; tags: FamilyTagHex[] }
   | { kind: 'note'; outcome: Outcome }
   | { kind: 'ignored' };
 
@@ -186,6 +239,12 @@ export function handleSound(store: NoteStore, who: Counterpart, bytes: Uint8Arra
     if (!ids) return { kind: 'ignored' };
     who.learnHave(ids);
     return { kind: 'have', shortIds: ids };
+  }
+  if (bytes[0] === WANT_MARK) {
+    const tags = decodeWant(bytes);
+    if (!tags) return { kind: 'ignored' };
+    who.learnWant(tags);
+    return { kind: 'want', tags };
   }
   const outcome = store.receive(bytes, now);
   learnFrom(who, outcome);

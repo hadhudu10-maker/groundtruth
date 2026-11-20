@@ -9,7 +9,8 @@ import type { BundleDecoder, BundleEncoder } from './bundle';
 import { CardFormatError, decodeCard, encodeCard } from './card';
 import { createDevice, loadDevice } from './device';
 import type { Device } from './device';
-import { bundleOf, createCounterpart, encodeHave, handleSound, haveIds, ingest, planOffer } from './forward';
+import { bundleOf, createCounterpart, encodeHave, encodeWant, handleSound, haveIds, ingest, planOffer } from './forward';
+import { createFamilyBook } from './family';
 import type { IngestSummary } from './forward';
 import { FamilyTab } from './FamilyTab';
 import { QrScan } from './QrScan';
@@ -215,6 +216,9 @@ function Screen({ device }: { device: Device }) {
         const lacks = planOffer(store, who).items.length;
         addLog('info', `Heard what they hold (${r.shortIds.length} notes). You have ${lacks} to pass on.`);
         bump();
+      } else if (r.kind === 'want') {
+        addLog('info', `They asked for their family (${r.tags.length} ${r.tags.length === 1 ? 'family' : 'families'}). Their family notes go first.`);
+        bump();
       } else if (r.kind === 'note') {
         reportOutcome(r.outcome);
         bump();
@@ -286,6 +290,12 @@ function Screen({ device }: { device: Device }) {
       return item ? { bytes: item.bytes, after: () => who.markOffered([item.id]) } : null;
     });
   const sendHave = () => soundSend('what you hold', () => ({ bytes: encodeHave(haveIds(store)) }));
+  // Read the family list fresh each time, so a family made or joined a moment ago is included.
+  const sendWant = () =>
+    soundSend('ask for my family', () => {
+      const tags = createFamilyBook().families().map((f) => f.tag);
+      return tags.length ? { bytes: encodeWant(tags) } : null;
+    });
 
   // ---------------------------------------------------------------- QR bundle
   const [encoder, setEncoder] = useState<BundleEncoder | null>(null);
@@ -473,6 +483,9 @@ function Screen({ device }: { device: Device }) {
           </button>
           <button type="button" className={btnSecondary} disabled={!!busy} onClick={sendHave}>
             Tell them what I hold (sound)
+          </button>
+          <button type="button" className={btnSecondary} disabled={!!busy} onClick={sendWant}>
+            Ask for my family's notes (sound)
           </button>
           <button type="button" className={btnPrimary} disabled={!offer.items.length} onClick={() => (encoder ? setEncoder(null) : showBundle())}>
             {encoder ? 'Hide the QR' : `Show ${Math.min(offer.items.length, 40)} as animated QR`}
