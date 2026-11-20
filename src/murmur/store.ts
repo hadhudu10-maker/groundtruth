@@ -7,7 +7,10 @@
 // Notes from authors whose key we do not hold cannot be checked yet. They are PARKED: not trusted,
 // never shown as verified, but still carried so that a relay can pass them on to someone who can check
 // them. When the author's card is scanned later, `retryParked` runs them through `receiveNote` again.
-import { createReplayGuard, decodeNote, receiveNote } from '../world';
+// Parked notes still obey the clock rules (future, stale): otherwise anyone, with no key at all, could
+// date junk far in the future and it would sit at the front of every offer, city wide, since offers go
+// newest first (security review, 2026-11-20).
+import { checkReplay, createReplayGuard, decodeNote, receiveNote } from '../world';
 import type { Identity, KeyIdHex, KeyLookup, NoteId, RejectReason, ReplayGuard, SignedNote, VerifiedNote } from '../world';
 import { defaultStore } from './device';
 import type { KeyValueStore } from './device';
@@ -105,7 +108,9 @@ export function createNoteStore(
     for (const l of [...listeners]) l();
   };
 
-  function park(note: SignedNote): Outcome {
+  function park(note: SignedNote, now: number): Outcome {
+    const late = checkReplay(createReplayGuard(), note, now); // only the clock rules can fire on an empty guard
+    if (late === 'future' || late === 'stale') return { kind: 'rejected', reason: late, id: note.id };
     const isNew = !parkedMap.has(note.id);
     if (isNew) {
       parkedMap.set(note.id, { id: note.id, author: note.author, seq: note.seq, time: note.time, bytes: note.bytes });
@@ -134,7 +139,7 @@ export function createNoteStore(
       return { kind: 'added', note: res.note };
     }
     if (res.reason === 'duplicate') return { kind: 'duplicate', id: decoded.id };
-    if (res.reason === 'unknown-key') return park(decoded);
+    if (res.reason === 'unknown-key') return park(decoded, now);
     return { kind: 'rejected', reason: res.reason, detail: res.detail, id: decoded.id };
   }
 

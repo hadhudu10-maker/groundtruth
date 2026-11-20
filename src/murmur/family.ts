@@ -3,9 +3,13 @@
 // Sealing uses the browser's built-in Web Crypto, AES-GCM with the 32-byte family key:
 //   sealed = nonce (12 random bytes) || ciphertext || GCM tag (16 bytes)      at most 55 bytes
 //   plaintext = condition (1 byte) || level (1 byte) || message (UTF-8, 0..25 bytes, cut to fit)
-//   additional data = "groundtruth/family/v1" || family tag (4 bytes) || author key ID (8 bytes)
+//   additional data = "groundtruth/family/v2" || family tag (4 bytes) || author key ID (8 bytes)
+//                     || seq (uint32 big endian) || time (uint32 big endian)
 // The author key ID in the additional data stops anyone from copying a relative's sealed bytes into a
-// note signed with their own key. The family key is shared only in person, by QR (never by sound).
+// note signed with their own key. The seq and time stop anyone from re-wrapping an OLD sealed status in
+// a header with a newer time: a reader who has not paired with the author cannot check the signature,
+// and "newest wins" would otherwise show the old status as current (security review, 2026-11-20).
+// The family key is shared only in person, by QR (never by sound).
 import { FAMILY_MAX_SEALED_BYTES, familyTagOf, signNote } from '../world';
 import type { FamilyCondition, FamilyKey, FamilyStatus, FamilyTagHex, KeyIdHex, ResidentCard, VerifiedNote } from '../world';
 import { decodeNote } from '../world';
@@ -22,12 +26,18 @@ export const FAMILY_MESSAGE_MAX_BYTES = FAMILY_PLAIN_MAX_BYTES - 2; // 25
 export const FAMILY_NAME_MAX_BYTES = 24;
 export const FAMILIES_KEY = 'gt.device.families.v1';
 
-const AAD_DOMAIN = new TextEncoder().encode('groundtruth/family/v1');
+const AAD_DOMAIN = new TextEncoder().encode('groundtruth/family/v2');
 const enc = new TextEncoder();
 const dec = new TextDecoder('utf-8', { fatal: true });
 
 export interface FamilyMessage extends FamilyStatus {
   message: string;
+}
+
+/** The signed header fields of the note that carries the sealed bytes. They are bound into the seal. */
+export interface FamilyStamp {
+  seq: number;
+  time: number;
 }
 
 /** Copy into a fresh ArrayBuffer-backed view, which is what Web Crypto's types ask for. */
@@ -69,13 +79,16 @@ export function decodeFamilyPlain(b: Uint8Array): FamilyMessage | null {
   }
 }
 
-function aad(tag: FamilyTagHex, author: KeyIdHex): Uint8Array<ArrayBuffer> {
+function aad(tag: FamilyTagHex, author: KeyIdHex, stamp: FamilyStamp): Uint8Array<ArrayBuffer> {
   const t = hexToBytes(tag);
   const a = hexToBytes(author);
-  const out = new Uint8Array(AAD_DOMAIN.length + t.length + a.length);
+  const out = new Uint8Array(AAD_DOMAIN.length + t.length + a.length + 8);
   out.set(AAD_DOMAIN, 0);
   out.set(t, AAD_DOMAIN.length);
   out.set(a, AAD_DOMAIN.length + t.length);
+  const view = new DataView(out.buffer, AAD_DOMAIN.length + t.length + a.length, 8);
+  view.setUint32(0, stamp.seq >>> 0);
+  view.setUint32(4, stamp.time >>> 0);
   return out;
 }
 
@@ -88,11 +101,11 @@ export function makeFamily(name: string): FamilyKey {
   return { key, tag: familyTagOf(key), name: cutUtf8(name, FAMILY_NAME_MAX_BYTES) };
 }
 
-export async function sealFamily(family: FamilyKey, author: KeyIdHex, m: FamilyMessage): Promise<Uint8Array> {
+export async function sealFamily(family: FamilyKey, author: KeyIdHex, m: FamilyMessage, stamp: FamilyStamp): Promise<Uint8Array> {
   const nonce = crypto.getRandomValues(new Uint8Array(FAMILY_NONCE_BYTES));
   const k = await importKey(family.key, 'encrypt');
   const ct = new Uint8Array(
-    await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce, additionalData: aad(family.tag, author) }, k, buf(encodeFamilyPlain(m))),
+    await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce, additionalData: aad(family.tag, author, stamp) }, k, buf(encodeFamilyPlain(m))),
   );
   const out = new Uint8Array(nonce.length + ct.length);
   out.set(nonce, 0);
@@ -100,13 +113,19 @@ export async function sealFamily(family: FamilyKey, author: KeyIdHex, m: FamilyM
   return out;
 }
 
-/** Null if the key is wrong, the bytes were changed, or the author does not match. */
-export async function openFamily(family: FamilyKey, author: KeyIdHex, sealed: Uint8Array, key?: CryptoKey): Promise<FamilyMessage | null> {
+/** Null if the key is wrong, the bytes were changed, or the author, seq or time do not match. */
+export async function openFamily(
+  family: FamilyKey,
+  author: KeyIdHex,
+  sealed: Uint8Array,
+  stamp: FamilyStamp,
+  key?: CryptoKey,
+): Promise<FamilyMessage | null> {
   if (sealed.length < FAMILY_NONCE_BYTES + FAMILY_GCM_TAG_BYTES + 2) return null;
   try {
     const k = key ?? (await importKey(family.key, 'decrypt'));
     const plain = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: buf(sealed.subarray(0, FAMILY_NONCE_BYTES)), additionalData: aad(family.tag, author) },
+      { name: 'AES-GCM', iv: buf(sealed.subarray(0, FAMILY_NONCE_BYTES)), additionalData: aad(family.tag, author, stamp) },
       k,
       buf(sealed.subarray(FAMILY_NONCE_BYTES)),
     );
@@ -118,8 +137,9 @@ export async function openFamily(family: FamilyKey, author: KeyIdHex, sealed: Ui
 
 /** Seal and sign a family note. Hand the result to `store.receive` like any note you write. */
 export async function writeFamilyNote(device: Device, family: FamilyKey, m: FamilyMessage, time: number): Promise<VerifiedNote> {
-  const sealed = await sealFamily(family, device.identity.keyId, m);
-  return signNote({ seq: device.nextSeq(), time, body: { kind: 'family', familyTag: family.tag, sealed } }, device.identity);
+  const seq = device.nextSeq();
+  const sealed = await sealFamily(family, device.identity.keyId, m, { seq, time });
+  return signNote({ seq, time, body: { kind: 'family', familyTag: family.tag, sealed } }, device.identity);
 }
 
 export interface RelativeStatus extends FamilyMessage {
@@ -154,7 +174,7 @@ export async function readFamily(family: FamilyKey, store: Pick<NoteStore, 'all'
   const best = new Map<KeyIdHex, RelativeStatus>();
   for (const c of candidates) {
     if (best.has(c.author)) continue; // a newer note from this relative already opened
-    const m = await openFamily(family, c.author, c.sealed, key);
+    const m = await openFamily(family, c.author, c.sealed, { seq: c.seq, time: c.time }, key);
     if (m) best.set(c.author, { ...m, author: c.author, time: c.time, seq: c.seq, noteId: c.id, verified: c.verified });
   }
   return [...best.values()].sort((a, b) => b.time - a.time);

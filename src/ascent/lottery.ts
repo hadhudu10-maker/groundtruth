@@ -18,8 +18,17 @@
 // organizer, who knows the seed, could watch the volunteers arrive and close at whichever moment gave
 // the crew they wanted. (Lead review, 2026-11-20.)
 //
-// Honest limits: the organizer could still enter throwaway volunteers of their own, which only pairing
-// with known residents prevents, and could refuse to reveal and so cancel a draw (visible to everyone).
+// The organizer's own volunteer notes never count (security review, 2026-11-20). The organizer knows the
+// seed before the close, and every note in the roll changes the close digest, so by signing its own
+// volunteer note with a different seq or time it could try thousands of digests and publish the one that
+// gives the crew it wants. Excluding its notes removes that lever from an organizer acting alone.
+//
+// Honest limits: an organizer working with an accomplice (a real resident, or a throwaway key residents
+// have paired with) can still grind: the accomplice signs many variants of a volunteer note and spreads
+// only the one the organizer picks. Only a draw where volunteers add their own secret, or a public random
+// value after the close, would stop that. The organizer could also leave out a volunteer whose note has
+// not spread widely; that volunteer's own copy then says 'roll-mismatch', so it is visible to them. And
+// the organizer could refuse to reveal and so cancel a draw (visible to everyone).
 // A copy that is missing a legitimate volunteer note cannot reproduce the close digest and says so
 // ('roll-mismatch') instead of giving a different crew.
 //
@@ -61,16 +70,16 @@ export function revealNote(organizer: Identity, seed: Uint8Array, seq: number, t
 
 const isVolunteer = (n: SignedNote) => n.body.kind === 'text' && n.body.text === VOLUNTEER_TEXT;
 
-/** Volunteer notes signed strictly before `closeTime`, in the fixed order every copy uses. */
-function rollVolunteers<N extends SignedNote>(notes: Iterable<N>, closeTime: number): N[] {
+/** Volunteer notes signed strictly before `closeTime`, not by the organizer, in the fixed order every copy uses. */
+function rollVolunteers<N extends SignedNote>(notes: Iterable<N>, closeTime: number, organizer: KeyIdHex): N[] {
   return [...notes]
-    .filter((n) => isVolunteer(n) && n.time < closeTime)
+    .filter((n) => isVolunteer(n) && n.time < closeTime && n.author !== organizer)
     .sort((a, b) => a.time - b.time || (a.id < b.id ? -1 : 1));
 }
 
 /** The digest of the roll: the seed commit, then the volunteers before the close, as a notebook head. */
 export function rollDigest(seedCommit: VerifiedNote, notes: Iterable<VerifiedNote>, closeTime: number): Uint8Array {
-  return headDigest(notebookFrom([seedCommit, ...rollVolunteers(notes, closeTime)]).head());
+  return headDigest(notebookFrom([seedCommit, ...rollVolunteers(notes, closeTime, seedCommit.author)]).head());
 }
 
 /** The organizer closes entries. `closeTime` is the note's own signed time. */
@@ -160,7 +169,7 @@ export function runDraw(nb: Notebook, organizer: KeyIdHex, k: number): DrawResul
   const digest = rollDigest(first, notes, close.time);
   if (bytesToHex(digest) !== bytesToHex(close.body.value)) return { ok: false, reason: 'roll-mismatch' };
 
-  const entrants = [...new Set(rollVolunteers(notes, close.time).map((n) => n.author))];
+  const entrants = [...new Set(rollVolunteers(notes, close.time, organizer).map((n) => n.author))];
   const ranking = rankEntrants(reveal.body.value, digest, entrants);
   return {
     ok: true,
