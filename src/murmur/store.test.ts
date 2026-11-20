@@ -136,6 +136,20 @@ describe('note store: parked notes from unknown authors', () => {
     expect(b.store.parked()).toHaveLength(0); // dropped, not kept forever
   });
 
+  it('applies the clock rules to notes it cannot check: far-future or stale junk is not carried', () => {
+    // Security review 2026-11-20: offers go newest first, so a parked note dated years ahead would sit at
+    // the front of every offer on every relay. Nobody needs a key to make one.
+    const a = resident('A');
+    const b = resident('B');
+    const future = text(a.device, 'me first', NOW + 10 * 365 * 24 * 3600);
+    const stale = text(a.device, 'old news', NOW - 30 * 24 * 3600);
+    const fine = text(a.device, 'ok', NOW + 60);
+    expect(b.store.receive(future.bytes)).toMatchObject({ kind: 'rejected', reason: 'future' });
+    expect(b.store.receive(stale.bytes)).toMatchObject({ kind: 'rejected', reason: 'stale' });
+    expect(b.store.receive(fine.bytes).kind).toBe('parked');
+    expect(b.store.parked().map((p) => p.id)).toEqual([fine.id]);
+  });
+
   it('caps parked notes so junk cannot grow the store without limit', () => {
     const a = resident('A');
     const b = resident('B');
