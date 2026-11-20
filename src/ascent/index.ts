@@ -3,3 +3,4 @@ export * from './rules';
 export * from './surfaceSim';
 export * from './surfaceNotes';
 export { SurfacePanel } from './SurfacePanel';
+export * from './lottery';
