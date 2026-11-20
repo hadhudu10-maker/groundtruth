@@ -29,7 +29,7 @@ In the Hollow the Directorate owns the network and the numbers. Groundtruth give
 
 **2. Fair split.** The same power notes, added up per level, prove the split is unfair, and a fair plan (the worst-off level first) is computed next to it. In a week with 10% less generation, the deepest level got 63.3% of the top level's power hours; a calm week gives about 98%.
 
-**4. Bad water.** Tap test notes are counted per recycler line. Once bad reports pass a threshold, that line gets a "do not drink" warning. 67.2% of residents on the bad line are warned before the bad water reaches them.
+**4. Bad water.** Tap test notes are counted per recycler line. Once bad reports pass a threshold, that line gets a "do not drink" warning. 67.2% of residents on the bad line are flagged before the bad water reaches them. On the dashboard the flag appears live as residents' signed tap tests pile up.
 
 **7. No network.** Signed 140-byte notes cross by sound (one note in 9 to 14 seconds) or by animated QR (40 at a time), stored and forwarded. Tested on a Mac and an iPhone in airplane mode. Across the simulated city, 61% of residents hold a warning 24 hours after it is written, with the network down.
 
@@ -37,14 +37,14 @@ In the Hollow the Directorate owns the network and the numbers. Groundtruth give
 
 **9. The real outbreak.** Self reports and clinic tallies are signed into the notebook. How much the two lists overlap gives the true case count (capture-recapture): 4.2 real cases for every official one, and a ranking of where to send supplies.
 
-**13. The surface.** The rules for "safe" are published first. Probe readings count only once independent witnesses on different levels sign them. A doubter and a believer update on the same evidence until they agree: 20 witness signatures on median, agreeing on the truth in 98% of 500 runs. The verdict travels phone to phone.
+**13. The surface.** The rules for "safe" are published first. Probe readings count only once independent witnesses on different levels sign them. A doubter and a believer update on the same evidence until they agree: 20 witness signatures on median, agreeing on the truth in 98% of 500 runs. The verdict is a signed note anyone can pass on.
 
 **14. Who goes first (partial).** A lottery anyone can re-run: the organizer commits to a secret seed, entries close at a time fixed in advance, then the seed is revealed. 200 residents re-running it from notebooks in different orders all get the same crew. We do not compare suits, domes and outposts.
 
 Underneath all of it is the notebook: an append-only Merkle log. Someone tries to rewrite history on screen and the check fails.
 
 ## How we built it
-Vite, React, TypeScript and Tailwind, as an offline-first web app (PWA) that works on any phone after one load. Ed25519 signatures (@noble/ed25519), data over sound (ggwave), animated QR (qr, qr-scanner, bc-ur), a fair split solver (javascript-lp-solver) and a seeded simulation of the Hollow (pure-rand) that produces every number we show. 320 automated tests. We froze one shared contract (the note format) on day one so the parts could be built in parallel.
+Vite, React, TypeScript and Tailwind, as an offline-first web app (PWA) that works on any phone after one load. Ed25519 signatures (@noble/ed25519), data over sound (ggwave), animated QR (qr, qr-scanner, bc-ur), a fair split solver (javascript-lp-solver) and seeded simulations (pure-rand) that produce every number we show: one of the city, one of the surface. About 320 automated tests. We froze one shared contract (the note format) on day one so the parts could be built in parallel.
 
 ## What is real and what is simulated
 Real, on devices: signing, passing notes by sound and QR in airplane mode, pairing, family encryption, the notebook and its proofs, a Mac noticing its charger is pulled. Simulated, seeded and repeatable: the city of 12 levels, how notes spread across it, blackouts, recyclers, the outbreak, surface readings and the lottery's re-runs.

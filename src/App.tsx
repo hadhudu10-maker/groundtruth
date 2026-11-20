@@ -1,8 +1,8 @@
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { CityCrossSection, Legend, ProblemRail, SimControls, StoryMode, useSim } from './ui'
 import { WarningPanel, useWarningProof } from './canary'
 import { FAIRSHARE_SCENARIO_LABEL, FairSplitPanel, measureFairShare } from './fairshare'
-import { NotebookPanel, OUTBREAK_SCENARIO, OutbreakPanel, useLedgerProof, useOutbreakReport } from './ledger'
+import { NotebookPanel, OUTBREAK_SCENARIO, OutbreakPanel, WaterPanel, useLedgerProof, useOutbreakReport } from './ledger'
 import { LotteryPanel, SurfacePanel, lotteryProof, surfaceProof } from './ascent'
 // Straight from the file, not './murmur', so the sound and QR libraries stay out of the dashboard bundle.
 import { SpreadPanel, useSpreadProof } from './murmur/SpreadPanel'
@@ -10,15 +10,27 @@ import { SpreadPanel, useSpreadProof } from './murmur/SpreadPanel'
 const DevTest = lazy(() => import('./murmur/DevTest'))
 const PassItOn = lazy(() => import('./murmur/PassItOn'))
 
+/** The page follows the address bar's #hash, also when only the hash changes (no reload). */
+function useHash(): string {
+  const [hash, setHash] = useState(() => location.hash)
+  useEffect(() => {
+    const onChange = () => setHash(location.hash)
+    window.addEventListener('hashchange', onChange)
+    return () => window.removeEventListener('hashchange', onChange)
+  }, [])
+  return hash
+}
+
 export default function App() {
-  if (location.hash === '#pass') {
+  const hash = useHash()
+  if (hash === '#pass') {
     return (
       <Suspense fallback={<p className="p-4 text-slate-400">Loading...</p>}>
         <PassItOn />
       </Suspense>
     )
   }
-  if (location.hash === '#devtest') {
+  if (hash === '#devtest') {
     return (
       <Suspense fallback={<p className="p-4 text-slate-400">Loading device tests...</p>}>
         <DevTest />
@@ -70,6 +82,7 @@ function Dashboard() {
           <div data-story="spread"><SpreadPanel summary={spread.summary} /></div>
           <div data-story="warning"><WarningPanel state={state} observations={sim.observations()} measured={warning.report} pending={!warning.report} /></div>
           <div data-story="fair"><FairSplitPanel state={fair.state} proof={fair.proof} caption={FAIRSHARE_SCENARIO_LABEL} /></div>
+          <div data-story="water"><WaterPanel sim={sim} state={state} warnedPct={ledgerProof.badWaterWarnedPct} /></div>
           <div data-story="outbreak">
             <OutbreakPanel
               report={outbreak}

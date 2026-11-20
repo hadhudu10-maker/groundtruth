@@ -6,7 +6,7 @@ Live: https://groundtruth-one-flame.vercel.app (open it once online; after that 
 
 Residents of the Hollow write **signed notes**, **pass them hand to hand** by sound and QR code with every radio off, keep them in a **notebook nobody can erase**, and **do math on the pile**. Every feature below is one kind of note plus one calculation.
 
-Real at human scale, simulated at city scale: the phone app really works between two devices in airplane mode, and a seeded simulation of the Hollow shows what happens across the whole city. Every number on the site and in the video comes from that simulation, never typed in by hand.
+Real at human scale, simulated at city scale: the phone app really works between two devices in airplane mode, and a seeded simulation of the Hollow shows what happens across the whole city. Every number on the site and in the video comes from seeded simulations (the city simulation, and a separate seeded model of the surface), never typed in by hand.
 
 ## Problems we answer
 
@@ -14,11 +14,11 @@ Real at human scale, simulated at city scale: the phone app really works between
 |---|---|---|---|---|
 | 1 | Blackouts hit with no warning | Full | Plugged-in devices write power notes. Rising flickers or an area going silent raise a warning, passed on phone to phone. | **1.5 hours** of warning (median over 500 seeded runs, 88% of blackouts warned) |
 | 2 | The deep levels always lose when power is short | Full | The same power notes, added up per level, prove the split is unfair. A fair plan (worst-off level first) is computed next to it. | Deepest level got **63.3%** of the top level's power hours in a week of 10% less generation (a calm week gives about 98%) |
-| 4 | Bad water reaches the taps | Full | Water test notes counted per recycler line. Once bad reports pass a threshold, that line gets a "do not drink" warning. | **67.2%** of residents on the bad line warned before the bad water reached them |
+| 4 | Bad water reaches the taps | Full | Water test notes counted per recycler line. Once bad reports pass a threshold, that line gets a "do not drink" warning. | **67.2%** of residents on the bad line flagged "do not drink" before the bad water reached them |
 | 7 | The Directorate can shut the network down | Full | Signed 140-byte notes passed by sound (ggwave) and animated QR, store and forward, with every radio off. Tested on a Mac and an iPhone in airplane mode. | **61%** of residents hold a warning 24 hours after it is written, network down (median over 200 seeded runs) |
 | 8 | Families split across levels cannot find each other | Full | Family notes locked to a family key (browser Web Crypto, AES-GCM), carried by anyone, opened only by family. "Ask for my family" makes carriers hand over your family's notes first. | **31%** of split families hear "safe" from a relative on another level within 48 hours, with everyone in the city writing at once (9% without "ask for my family") |
 | 9 | The official sick count does not match what people see | Full | Self reports and clinic tallies, signed into the notebook, overlap to estimate the true case count (capture-recapture), plus a supply ranking by real cases. | **4.2 real cases** for every official one |
-| 13 | Is the surface safe? Nobody believes anybody. | Full | Rules published first, probe readings signed by independent witnesses on different levels, a doubter and a believer updating on the same evidence until they agree. The verdict travels phone to phone. | **20** witness signatures until doubter and believer agree (500 seeded runs: 98% agree on the truth, 1.8% on the wrong answer) |
+| 13 | Is the surface safe? Nobody believes anybody. | Full | Rules published first, probe readings signed by independent witnesses on different levels, a doubter and a believer updating on the same evidence until they agree. The verdict is a signed note anyone can pass on. | **20** witness signatures until doubter and believer agree (500 seeded runs: 98% agree on the truth, 1.8% on the wrong answer) |
 | 14 | Who goes up first? | Partial | Only the "who goes first" half: a commit, close, reveal lottery anyone can re-run from their own copy of the notebook. We do not compare suits, domes and outposts. | **100%** of 200 residents re-running the draw from notebooks in different orders get the same crew |
 
 Cut on purpose: 3, 5, 6, 10, 11, 12 and 15. One connected system that answers seven problems well beat a thin answer to all fifteen.
@@ -85,7 +85,7 @@ Full threat model, with every finding and whether it is fixed: [docs/12 Security
 ## Try it
 
 - **Dashboard:** https://groundtruth-one-flame.vercel.app. Play the story, or use the red buttons to cut power, kill the network, or break a recycler, and watch the panels respond.
-- **Phone app:** https://groundtruth-one-flame.vercel.app/#pass on two phones. Load it once online, turn on airplane mode, pair by QR, then pass notes by sound or QR. The Family tab makes or joins a family.
+- **Phone app:** https://groundtruth-one-flame.vercel.app/#pass on two phones. Load it once online, turn on airplane mode, pair by QR, then pass notes by sound or QR. "My power flickered" signs a power note by hand. The Family tab makes or joins a family.
 - **Device tests:** https://groundtruth-one-flame.vercel.app/#devtest
 
 ## Run it locally
@@ -95,7 +95,7 @@ Node 22.
 ```bash
 npm ci
 npm run dev        # http://localhost:5173
-npm test           # Vitest, about 310 tests
+npm test           # Vitest, about 320 tests
 npm run build      # type check and production build
 ```
 
@@ -106,7 +106,7 @@ The animated QR only works in the production build (`npm run build && npm run pr
 | Folder | What it is |
 |---|---|
 | `src/world` | The contract: note format, signing, replay rules, shared types, the problem list |
-| `src/sim` | The seeded Hollow simulation that produces every number |
+| `src/sim` | The seeded Hollow simulation behind the city numbers |
 | `src/murmur` | Sound and QR transfer, store and forward, family notes, the phone app, city-scale spread |
 | `src/canary` | Power notes, flicker warning, silence alarm |
 | `src/fairshare` | Unfairness proof and the fair split |

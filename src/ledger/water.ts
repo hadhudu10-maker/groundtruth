@@ -21,12 +21,15 @@ export function waterLines(state: Pick<SimCityState, 'recyclers'>): WaterLine[] 
   return state.recyclers.map((r) => ({ recycler: r.id, feeds: [...r.feeds] }));
 }
 
-/** Sign every water observation as the resident who made it. Each resident's seq counts up from 1. */
+/**
+ * Sign every water observation as the resident who made it. Each resident's seq counts up from 1.
+ * Pass the same `seq` map again to sign a later batch where the last one stopped (the live dashboard).
+ */
 export function waterNotes(
   sim: Pick<Sim, 'seed' | 'levelOfResident' | 'observations'>,
   observations: Iterable<ReturnType<Sim['observations']>[number]> = sim.observations(),
+  seq: Map<number, number> = new Map(),
 ): VerifiedNote<WaterBody>[] {
-  const seq = new Map<number, number>();
   const out: VerifiedNote<WaterBody>[] = [];
   for (const o of observations) {
     if (o.type !== 'water') continue;

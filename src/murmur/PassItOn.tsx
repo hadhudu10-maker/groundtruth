@@ -2,7 +2,7 @@
 // across by sound (one note) or animated QR (many), and read each other's notes with their verified status.
 // Everything incoming goes through the note store, which sends it through receiveNote. Works with every radio off.
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from 'react';
-import { NOTE_MAX_PAYLOAD_BYTES, NoteFormatError, signNote } from '../world';
+import { NOTE_MAX_PAYLOAD_BYTES, NoteFormatError, keyIdOf, signNote } from '../world';
 import type { KeyIdHex, NoteBody, VerifiedNote } from '../world';
 import { BUNDLE_FPS, createBundleDecoder, createBundleEncoder } from './bundle';
 import type { BundleDecoder, BundleEncoder } from './bundle';
@@ -145,11 +145,13 @@ function Screen({ device }: { device: Device }) {
   const lastBadCard = useRef('');
   const onCardScan = (text: string) => {
     try {
-      const peer = device.addPeer(decodeCard(text));
-      if (peer.keyId === device.identity.keyId) {
+      const card = decodeCard(text);
+      // Check before saving, so your own card never lands in "Paired with".
+      if (keyIdOf(card.publicKey) === device.identity.keyId) {
         setCardMsg('That is your own card. Scan the other device.');
         return;
       }
+      const peer = device.addPeer(card);
       setScanCard(false);
       setCardMsg(null);
       const promoted = store.retryParked(nowS());
@@ -179,6 +181,14 @@ function Screen({ device }: { device: Device }) {
     } catch (e) {
       setWriteErr(e instanceof NoteFormatError ? e.message : 'Could not sign that note.');
     }
+  };
+  // Phones cannot sense their charger (Safari has no battery access), so residents tap instead.
+  // It is the same power note a plugged-in device writes, and the blackout warning counts it.
+  const flickered = () => {
+    const level = device.identity.level;
+    const note = signNote({ seq: device.nextSeq(), time: nowS(), body: { kind: 'power', level, zone: 0, event: 'flicker', durationS: 0 } }, device.identity);
+    store.receive(note.bytes, nowS());
+    addLog('ok', `Signed a power note: power flickered on level ${level}.`);
   };
 
   // ---------------------------------------------------------------- who we are passing to
@@ -437,6 +447,9 @@ function Screen({ device }: { device: Device }) {
         <button type="button" className={btnPrimary} disabled={!draft.trim() || draftBytes > NOTE_MAX_PAYLOAD_BYTES} onClick={sign}>
           Sign and keep
         </button>
+        <button type="button" className={btnSecondary} onClick={flickered}>
+          My power flickered
+        </button>
         {writeErr && <p className="text-sm text-rose-300">{writeErr}</p>}
       </section>
 
@@ -487,7 +500,7 @@ function Screen({ device }: { device: Device }) {
           <button type="button" className={btnSecondary} disabled={!!busy} onClick={sendWant}>
             Ask for my family's notes (sound)
           </button>
-          <button type="button" className={btnPrimary} disabled={!offer.items.length} onClick={() => (encoder ? setEncoder(null) : showBundle())}>
+          <button type="button" className={btnPrimary} disabled={!encoder && !offer.items.length} onClick={() => (encoder ? setEncoder(null) : showBundle())}>
             {encoder ? 'Hide the QR' : `Show ${Math.min(offer.items.length, 40)} as animated QR`}
           </button>
           <button type="button" className={btnSecondary} onClick={() => (scanBundle ? setScanBundle(false) : startBundleScan())}>

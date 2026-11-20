@@ -32,6 +32,10 @@ export function useSim(seed = DEMO_SEED) {
     proof,
     playing,
     setPlaying,
-    reset: () => setSim(makeSim(seed)),
+    // A fresh city always runs, so story mode never starts on a paused one.
+    reset: () => {
+      setSim(makeSim(seed))
+      setPlaying(true)
+    },
   }
 }

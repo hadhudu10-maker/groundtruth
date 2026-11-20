@@ -20,6 +20,13 @@ export interface StoryStep {
   rewriteHistory?: boolean
 }
 
+/**
+ * Calm simulated hours before the first failure (run instantly when the story starts). The blackout
+ * warning compares each level with its own past, the Directorate publishes its count each morning, and
+ * the notebook fills with sick notes, so without them steps 4 and 6 would have nothing to show.
+ */
+export const STORY_WARMUP_HOURS = 72
+
 function has(sim: Sim, kind: string, level?: number): boolean {
   return sim.getState().failures.some((f) => f.spec.kind === kind && (level === undefined || ('level' in f.spec && f.spec.level === level)))
 }
@@ -30,10 +37,12 @@ export const STORY_STEPS: readonly StoryStep[] = [
     title: 'The Hollow',
     problems: [],
     targets: ['city'],
-    says: 'The deepest level loses power and the Directorate shuts the network down. Nothing here needs it from now on.',
+    says: 'Three ordinary days pass. Then a deep level loses power and the Directorate shuts the network down. Nothing here needs it from now on.',
     run: (sim) => {
-      const deepest = sim.levelCount
-      if (!has(sim, 'level-power-loss', deepest)) sim.trigger({ kind: 'level-power-loss', level: deepest, rampHours: 2 })
+      const hour = sim.getState().hour
+      if (hour < STORY_WARMUP_HOURS) sim.step(STORY_WARMUP_HOURS - hour)
+      const deep = sim.levelCount - 1
+      if (!has(sim, 'level-power-loss', deep)) sim.trigger({ kind: 'level-power-loss', level: deep, rampHours: 2 })
       if (!has(sim, 'network-down')) sim.trigger({ kind: 'network-down' })
     },
   },
@@ -49,14 +58,17 @@ export const STORY_STEPS: readonly StoryStep[] = [
     title: 'Family',
     problems: [8],
     targets: ['spread'],
-    says: 'A family note reading "Safe, level 11" is carried by anyone and reaches a relative on level 3.',
+    says: 'Family notes are locked to a family key and carried by anyone. When a relative asks for their family, carriers hand those notes over first.',
   },
   {
     n: 4,
     title: 'Warning',
     problems: [1],
-    targets: ['warning'],
-    says: 'Plugged-in devices write power notes. Rising flickers, or a level going silent, raise the warning hours before the blackout.',
+    targets: ['city', 'warning'],
+    says: "Level 12's power starts to fail. Plugged-in devices write power notes, the flickers rise, and the warning fires before the level goes dark.",
+    run: (sim) => {
+      if (!has(sim, 'level-power-loss', sim.levelCount)) sim.trigger({ kind: 'level-power-loss', level: sim.levelCount, rampHours: 8 })
+    },
   },
   {
     n: 5,
@@ -69,8 +81,8 @@ export const STORY_STEPS: readonly StoryStep[] = [
     n: 6,
     title: 'Water and outbreak',
     problems: [4, 9],
-    targets: ['city', 'outbreak', 'notebook'],
-    says: 'A recycler on the deepest level breaks and the reports trace to it. Two lists reveal the real case count, then the Directorate tries to rewrite the notebook.',
+    targets: ['water', 'outbreak', 'notebook'],
+    says: 'Bad tap tests pile up on one recycler line until it gets a "do not drink" flag. Two lists reveal the real case count, then the Directorate tries to rewrite the notebook.',
     run: (sim) => {
       if (!has(sim, 'recycler-failure', sim.levelCount)) sim.trigger({ kind: 'recycler-failure', level: sim.levelCount })
     },
@@ -81,7 +93,7 @@ export const STORY_STEPS: readonly StoryStep[] = [
     title: 'The surface',
     problems: [13, 14],
     targets: ['surface', 'lottery'],
-    says: 'Readings arrive, witnesses sign, a doubter and a believer agree, and the verdict spreads. Then the first crew is drawn by a lottery anyone can re-run.',
+    says: 'Readings arrive, witnesses sign, and a doubter and a believer agree. The verdict is a signed note anyone can pass on. Then the first crew is drawn by a lottery anyone can re-run.',
   },
   {
     n: 8,

@@ -1,13 +1,13 @@
 // src/ledger: the notebook nobody can erase, and the math done on it.
 //
-// Wiring (for src/App.tsx, at merge time):
+// How src/App.tsx uses it:
 //   const report = useOutbreakReport(sim, state);         // signed sick notes in a notebook, rebuilt daily
 //   <OutbreakPanel report={report} />                     // official vs estimated vs actual, supply ranking
 //   <NotebookPanel notebook={report.notebook} />          // head, entries, inclusion check, rewrite history
-//   proof: { ...sim.proof(), ...measureOutbreak().proof, ...measureWater().proof }
+//   <WaterPanel sim={sim} state={state} />                // live "do not drink" flags from signed tap tests
+//   const proof = useLedgerProof();                       // both rail numbers, measured once in a worker:
 //     outbreakUndercountRatio: one harness run (OUTBREAK_SCENARIO), well under a second
-//     badWaterWarnedPct: 20 harness runs of 20 days (WATER_SCENARIO), about 9 s, so compute it once
-//     at build or story time, not on every render
+//     badWaterWarnedPct: 20 harness runs of 20 days (WATER_SCENARIO), about 9 s
 export {
   notebook,
   headDigest,
@@ -54,3 +54,4 @@ export {
 } from './water';
 export { measureLedgerProof, type LedgerProof } from './proof';
 export { useLedgerProof } from './useLedgerProof';
+export { WaterPanel, useWaterAlarms } from './WaterPanel';

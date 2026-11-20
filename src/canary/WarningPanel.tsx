@@ -16,9 +16,9 @@ export interface WarningPanelProps {
   pending?: boolean;
 }
 
-/** Simulated clock as "day 2, 19:00". */
+/** Simulated clock as "day 2, 19:00", counting days from 1 like the rest of the dashboard. */
 function clock(t: number): string {
-  const day = Math.floor(t / (24 * HOUR));
+  const day = Math.floor(t / (24 * HOUR)) + 1;
   const h = Math.floor((t % (24 * HOUR)) / HOUR);
   const m = Math.floor((t % HOUR) / 60);
   return `day ${day}, ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
