@@ -10,6 +10,8 @@ export interface FairSplitPanelProps {
   powerBasis?: FairShareOptions['powerBasis'];
   /** `sim.proof()`, so the headline share is exactly the number the problem rail shows. */
   proof?: ProofValues;
+  /** Says which run the panel shows, for example the fixed scenario the rail number comes from. */
+  caption?: string;
 }
 
 const LABEL: Record<Resource, string> = { power: 'Power', water: 'Water', food: 'Food' };
@@ -44,7 +46,7 @@ function Bars({ split }: { split: ResourceSplit }) {
   );
 }
 
-export default function FairSplitPanel({ state, powerBasis, proof }: FairSplitPanelProps) {
+export default function FairSplitPanel({ state, powerBasis, proof, caption }: FairSplitPanelProps) {
   const split = useMemo(() => fairSplit(state, { powerBasis, proof }), [state, powerBasis, proof]);
   const [resource, setResource] = useState<Resource>('power');
   const r = split.resources[resource];
@@ -65,6 +67,11 @@ export default function FairSplitPanel({ state, powerBasis, proof }: FairSplitPa
           </span>
         ) : null}
       </header>
+      {caption ? (
+        <p data-testid="fair-caption" className="mt-1 text-[11px] text-slate-500">
+          {caption}
+        </p>
+      ) : null}
 
       <div role="tablist" aria-label="Resource" className="mt-2 grid grid-cols-3 gap-1">
         {RESOURCES.map((x) => {
