@@ -59,12 +59,15 @@ function ProblemCard({ problem, proof }: { problem: Problem; proof: ProofValues 
   )
 }
 
+/** By the brief's number, so judges can match each card to the brief. */
+const BY_NUMBER = [...PROBLEMS].sort((a, b) => a.id - b.id)
+
 export function ProblemRail({ proof }: { proof: ProofValues }) {
   return (
     <section aria-label="Problem rail">
       <h2 className="mb-2 text-xs font-semibold tracking-wide text-slate-300">PROBLEMS ANSWERED</h2>
       <ol className="flex flex-col gap-2">
-        {PROBLEMS.map((p) => (
+        {BY_NUMBER.map((p) => (
           <ProblemCard key={p.id} problem={p} proof={proof} />
         ))}
       </ol>

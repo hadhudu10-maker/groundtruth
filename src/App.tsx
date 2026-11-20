@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CityCrossSection, ProblemRail, SimControls, useSim } from './ui'
+import { CityCrossSection, Legend, ProblemRail, SimControls, useSim } from './ui'
 
 export default function App() {
   const { sim, state, proof, playing, setPlaying, reset } = useSim()
@@ -25,7 +25,10 @@ export default function App() {
           />
           <CityCrossSection city={state} selectedId={selectedId} onSelect={setSelectedId} />
         </div>
-        <ProblemRail proof={proof} />
+        <div className="flex flex-col gap-3">
+          <Legend />
+          <ProblemRail proof={proof} />
+        </div>
       </div>
     </main>
   )
