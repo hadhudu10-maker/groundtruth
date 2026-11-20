@@ -27,8 +27,10 @@
 // Each run follows up to 32 of those notes in full (whole families, about 8 a run) and treats the rest
 // as background traffic of the same kind: a note gets into a bundle with probability
 // bundle size / notes waiting, and a relay drops notes at random once it would carry more than
-// `carryLimit`. A family is reconnected when every member holds every other member's note within
-// 48 hours. The rail shows the share over all followed families in 200 runs.
+// `carryLimit`. The rail counts a family when at least one member holds the "safe" note of a relative
+// living on another level within 48 hours (the label: families who got a "safe" note). The strict
+// count, every member holding every relative's note, is reported next to it. Share over all followed
+// families in 200 runs.
 //
 // Assumptions that are not measured: meeting rates, the courier share, the split share and the QR
 // versus sound mix. Measured on real phones (Tue 2026-11-17, airplane mode): a 140 byte note crosses
@@ -39,7 +41,9 @@
 // Measured with the defaults, seeds 1..200 (Fri 2026-11-20, 3.7 s in Node). The rail reads measureSpread,
 // not these lines:
 //   networkDownReachPct     61   (median; reach climbs from hour 7 and stops at hour 16 when people sleep)
-//   familiesReconnectedPct   0   (0 of 1763 followed split families)
+//   familiesReconnectedPct   9   (162 of 1763 followed split families heard "safe" from a relative on
+//                                another level; this is the rail label's question. Strict version, every
+//                                member holding every relative's note: 0 of 1763.)
 // Sensitivity, 20 runs each: carry limit 2000 or 20000 still gives 0% (the limit is bundle room, 40 slots
 // against about 4000 notes written at once, not storage); 5% of residents in split families gives 9%,
 // and 15% with a carry limit of 2000. Every family member must hold every relative's note, a strict test.
@@ -89,7 +93,10 @@ export interface SpreadRun {
   /** Share of residents holding the warning, index = hours since it was written (0..reachHours). */
   reachByHour: number[];
   splitFamilies: number;
+  /** Strict: every member holds every relative's note. */
   familiesReconnected: number;
+  /** The rail's number: at least one member holds a note from a relative on another level. */
+  familiesHeard: number;
 }
 
 function popcount(x: number): number {
@@ -244,7 +251,16 @@ export function runSpread(seed: number, overrides: Partial<SpreadParams> = {}): 
   }
 
   const familiesReconnected = families.filter((members) => members.every((m) => (held[m]! & famMask[m]!) === famMask[m])).length;
-  return { seed, population: pop, reachByHour, splitFamilies: families.length, familiesReconnected };
+  // The rail's question ("families who got a 'safe' note"): someone in the family holds the note of a
+  // relative who lives on another level.
+  const familiesHeard = families.filter((members) =>
+    members.some((m) => {
+      let elsewhere = 0;
+      for (const o of members) if (o !== m && home[o] !== home[m]) elsewhere |= ownBit[o]!;
+      return (held[m]! & elsewhere) !== 0;
+    }),
+  ).length;
+  return { seed, population: pop, reachByHour, splitFamilies: families.length, familiesReconnected, familiesHeard };
 }
 
 export interface SpreadSummary {
@@ -254,6 +270,7 @@ export interface SpreadSummary {
   medianReach: number;
   splitFamilies: number;
   familiesReconnected: number;
+  familiesHeard: number;
 }
 
 const median = (xs: number[]) => {
@@ -275,12 +292,14 @@ export function measureSpread(opts: { runs?: number; firstSeed?: number; params?
     medianReach: reachByHour[hours - 1]!,
     splitFamilies: all.reduce((s, r) => s + r.splitFamilies, 0),
     familiesReconnected: all.reduce((s, r) => s + r.familiesReconnected, 0),
+    familiesHeard: all.reduce((s, r) => s + r.familiesHeard, 0),
   };
 }
 
 export function spreadProof(s: SpreadSummary): Pick<ProofValues, 'networkDownReachPct' | 'familiesReconnectedPct'> {
   return {
     networkDownReachPct: Math.round(100 * s.medianReach),
-    familiesReconnectedPct: Math.round((100 * s.familiesReconnected) / Math.max(1, s.splitFamilies)),
+    // Matches the rail label in src/world/problems.ts: families who got a "safe" note from a relative.
+    familiesReconnectedPct: Math.round((100 * s.familiesHeard) / Math.max(1, s.splitFamilies)),
   };
 }

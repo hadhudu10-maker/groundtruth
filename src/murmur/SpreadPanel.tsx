@@ -47,7 +47,10 @@ export function SpreadPanel({ summary }: { summary?: SpreadSummary }) {
         <div className="rounded-md bg-slate-800/60 p-2">
           <p className="font-mono text-2xl font-semibold text-emerald-300" data-testid="spread-families">{p.familiesReconnectedPct}%</p>
           <p className="text-xs text-slate-400">
-            of split families got every relative's "safe" note within 48 hours ({summary.familiesReconnected} of {summary.splitFamilies})
+            of split families heard "safe" from a relative on another level within 48 hours ({summary.familiesHeard} of {summary.splitFamilies})
+          </p>
+          <p className="mt-1 text-[11px] text-slate-500" data-testid="spread-families-strict">
+            Every member got every relative's note: {summary.familiesReconnected} of {summary.splitFamilies}
           </p>
         </div>
       </div>

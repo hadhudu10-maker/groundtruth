@@ -29,12 +29,20 @@ describe('city-scale spread with the network down', () => {
     const r = runSpread(3, { qrSuccess: 0, soundNoteSuccess: 0 });
     expect(r.reachByHour.at(-1)).toBeCloseTo(1 / r.population, 6);
     expect(r.familiesReconnected).toBe(0);
+    expect(r.familiesHeard).toBe(0);
+  });
+
+  it('every fully reconnected family has also heard from a relative', () => {
+    const r = runSpread(5);
+    expect(r.familiesHeard).toBeGreaterThanOrEqual(r.familiesReconnected);
+    expect(r.familiesHeard).toBeLessThanOrEqual(r.splitFamilies);
   });
 
   it('with perfect, unlimited hand-offs nearly everyone is reached and families reconnect', () => {
     const r = runSpread(3, { qrSuccess: 1, soundNoteSuccess: 1, qrShare: 1, bundleNotes: 1e9, carryLimit: 1e9, meetChance: 1 });
     expect(r.reachByHour.at(-1)!).toBeGreaterThan(0.95);
     expect(r.familiesReconnected / r.splitFamilies).toBeGreaterThan(0.9);
+    expect(r.familiesHeard / r.splitFamilies).toBeGreaterThan(0.9);
   });
 
   it('gives both rail numbers as whole percents from seeded runs', () => {
