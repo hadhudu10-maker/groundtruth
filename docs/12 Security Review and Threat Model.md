@@ -80,7 +80,7 @@ Can:
 * Refuse to reveal the seed and so cancel a draw. Everyone sees that.
 * Grind the draw with an accomplice: the accomplice signs many versions of their volunteer note, the organizer (who knows the seed) picks the one that gives the crew it wants, and only that one is spread (H4, open).
 * Leave a volunteer out of the close if their note has not spread. That volunteer's own copy then fails with `roll-mismatch`, so they can see it.
-* Publish two different closes to two groups (M6, open).
+* Publish two different closes to two groups and have it go unnoticed once copies meet (M6, fixed: the draw is refused).
 
 Cannot:
 * Pick the seed after seeing the volunteers (the commit comes first).
@@ -108,7 +108,7 @@ Severity is about our own design and code. "Open" means not fixed in this review
 | M3 | Medium | `src/murmur/card.ts:45`, `src/murmur/device.ts:94` | **Cards are trusted on first scan.** Name and level are whatever the card says. Scanning a new card for a known key renames it. Witness levels in the surface verdict come from cards. | Open, design limit: trust comes from meeting in person. |
 | M4 | Medium | `src/murmur/forward.ts:53` | **WANT tells everyone in earshot which families you belong to.** The comment says it "reveals nothing new"; that is true for the tags, but it now ties the tags to the person standing there, even one who never wrote a note. | Open. It is opt in per tap. Wording to fix in the README rather than the code. |
 | M5 | Medium | `src/murmur/family.ts:191` | **The family code QR is the raw family key.** Anyone who photographs the screen can read the family forever. There is no key rotation. | Open, design limit. Show the code only face to face. |
-| M6 | Medium | `src/ascent/lottery.ts:156` | **Two closes.** The organizer can sign two different closes and spread each to a different group. Each group computes its own crew until the copies meet. | Open. A re-run could refuse a draw that sees two closes at the fixed time. Small, but in a module another session finished today, so left for the lead. |
+| M6 | Medium | `src/ascent/lottery.ts:156` | **Two closes.** The organizer can sign two different closes and spread each to a different group. Each group computes its own crew until the copies meet. | Fixed (lead, 2026-11-20): a copy that holds two different closes refuses the draw (`two-closes`), tested. Each group can still compute its own crew until copies meet. |
 | M7 | Medium | `src/world/identity.ts:33`, `src/ledger/outbreak.ts:129` | **Case tags and family tags are linkable.** Anyone who knows your key ID can tell a sick report is yours, and every note with the same family tag is from the same family. A clinic volunteer can list tags of people who are not sick. | Open, accepted for the demo and already noted in the code. |
 | L1 | Low | `src/world/note.ts:503` | A note more than 1024 seqs behind its author's newest is refused even if it was never seen. A very active author's old notes can be lost to someone who meets them late. | Open, deliberate trade off against replays. |
 | L2 | Low | `src/world/note.ts:496` | The clock rules use the receiver's phone clock. A phone with a wrong clock refuses good notes as future or stale. | Open. |

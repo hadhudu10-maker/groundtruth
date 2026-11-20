@@ -117,7 +117,8 @@ export type DrawFailure =
   | 'not-revealed'
   | 'reveal-before-close'
   | 'reveal-mismatch'
-  | 'roll-mismatch';
+  | 'roll-mismatch'
+  | 'two-closes';
 
 export type DrawResult =
   | {
@@ -157,6 +158,12 @@ export function runDraw(nb: Notebook, organizer: KeyIdHex, k: number): DrawResul
   if (!close || close.body.kind !== 'commit') return { ok: false, reason: heads.length ? 'commit-after-close' : 'not-closed' };
   if (close.time < first.time) return { ok: false, reason: 'commit-after-close' };
   if (close.time !== closeTimeFor(first)) return { ok: false, reason: 'close-time-changed' };
+  // Two different closes for the same draw (security review M6): the organizer spread one to each group
+  // so each would compute its own crew. As soon as a copy holds both, the draw is refused.
+  const closeHex = bytesToHex(close.body.value);
+  if (heads.some((h) => h.seq > first.seq && h.body.kind === 'commit' && bytesToHex(h.body.value) !== closeHex)) {
+    return { ok: false, reason: 'two-closes' };
+  }
 
   const reveals = commits('lottery-reveal');
   const reveal = reveals[0];

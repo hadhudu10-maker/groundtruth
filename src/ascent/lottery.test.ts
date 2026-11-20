@@ -39,6 +39,17 @@ function setup(volunteers = 12, k = 4) {
   return { organizer, seed, people, commit, vols, close, reveal, all, closeTime, k };
 }
 
+describe('two different closes for one draw (security review M6)', () => {
+  test('each group alone gets a result, but a copy holding both closes refuses the draw', () => {
+    const s = setup();
+    // A second close at the same fixed time that leaves one volunteer out, spread to another group.
+    const otherClose = closeNote(s.organizer, s.commit, s.vols.slice(1), 4, s.closeTime);
+    expect(runDraw(notebookFrom(s.all), s.organizer.keyId, s.k).ok).toBe(true);
+    const both = runDraw(notebookFrom([...s.all, otherClose]), s.organizer.keyId, s.k);
+    expect(both).toEqual({ ok: false, reason: 'two-closes' });
+  });
+});
+
 describe('the close time is fixed by the commit', () => {
   test('entries close exactly one window after the seed commit', () => {
     const s = setup();

@@ -10,6 +10,8 @@ const WHY: Record<string, string> = {
   'reveal-mismatch': 'The revealed seed does not match the commit. Draw rejected.',
   'seed-changed': 'Two different seeds were committed. Draw rejected.',
   'roll-mismatch': 'This copy cannot rebuild the published close. Sync notes first.',
+  'two-closes': 'The organizer published two different closes. Draw rejected.',
+  'close-time-changed': 'Entries were closed at a moment the organizer chose. Draw rejected.',
 };
 
 /**
