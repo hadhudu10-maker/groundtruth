@@ -54,6 +54,11 @@ describe('panels render at phone width with real numbers', () => {
     expect(html).toContain(`${report.proof.outbreakUndercountRatio}x`);
     expect(html).toContain('Official');
     expect(html).not.toMatch(dash);
+    const live = renderToStaticMarkup(<OutbreakPanel report={report} headline={{ ratio: 4.2, days: 10 }} />);
+    expect(live).toContain('4.2x');
+    expect(live).toContain('measured over a 10 day run');
+    expect(live).toContain('Right now in the city, day 11');
+    expect(renderToStaticMarkup(<OutbreakPanel report={report} headline={{ ratio: undefined, days: 10 }} />)).toContain('measuring...');
     const sim = createSim({ seed: 3, hazards: false });
     expect(() => renderToStaticMarkup(<OutbreakPanel report={outbreakReport(sim)} />)).not.toThrow();
   });

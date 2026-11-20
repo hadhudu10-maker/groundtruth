@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
 import { CityCrossSection, Legend, ProblemRail, SimControls, useSim } from './ui'
-import { NotebookPanel, OutbreakPanel, useLedgerProof, useOutbreakReport } from './ledger'
+import { NotebookPanel, OUTBREAK_SCENARIO, OutbreakPanel, useLedgerProof, useOutbreakReport } from './ledger'
 
 const DevTest = lazy(() => import('./murmur/DevTest'))
 
@@ -42,7 +42,10 @@ function Dashboard() {
             onReset={reset}
           />
           <CityCrossSection city={state} selectedId={selectedId} onSelect={setSelectedId} />
-          <OutbreakPanel report={outbreak} />
+          <OutbreakPanel
+            report={outbreak}
+            headline={{ ratio: ledgerProof.outbreakUndercountRatio, days: OUTBREAK_SCENARIO.hours / 24 }}
+          />
           <NotebookPanel notebook={outbreak.notebook} />
         </div>
         <div className="flex flex-col gap-3">

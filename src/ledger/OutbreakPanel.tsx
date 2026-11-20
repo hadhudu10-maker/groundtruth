@@ -6,10 +6,25 @@ const n0 = (x: number) => Math.round(x).toLocaleString('en-US');
 /**
  * Problem 9 on one card: per level, the Directorate's number, the notebook's estimate and the
  * simulation's truth; the undercount ratio; and where `supplyUnits` units of medicine should go.
+ *
+ * Pass `headline` (the rail's harness number) so the big ratio matches the problem rail; the boxes
+ * and table below then read as "right now in the live city". Without it, the report's own ratio shows.
  */
-export function OutbreakPanel({ report, supplyUnits = 100, topSupplies = 5 }: { report: OutbreakReport; supplyUnits?: number; topSupplies?: number }) {
+export function OutbreakPanel({
+  report,
+  headline,
+  supplyUnits = 100,
+  topSupplies = 5,
+}: {
+  report: OutbreakReport;
+  /** The rail's outbreakUndercountRatio (undefined while it is being measured) and the run length in days. */
+  headline?: { ratio: number | undefined; days: number };
+  supplyUnits?: number;
+  topSupplies?: number;
+}) {
   const { total, levels, proof } = report;
-  const ratio = proof.outbreakUndercountRatio;
+  const ratio = headline ? headline.ratio : proof.outbreakUndercountRatio;
+  const day = Math.floor(report.time / 86400) + 1;
   const max = Math.max(1, ...levels.map((l) => Math.max(l.estimate, l.actual, l.official)));
   const supplies = rankSupplies(supplyUnits, levels).filter((s) => s.units > 0).slice(0, topSupplies);
 
@@ -22,17 +37,24 @@ export function OutbreakPanel({ report, supplyUnits = 100, topSupplies = 5 }: { 
         </h2>
         <span className="text-right text-xs text-slate-400">
           {ratio === undefined ? (
-            'no official count yet'
+            headline ? 'measuring...' : 'no official count yet'
           ) : (
             <>
               <span data-testid="outbreak-ratio" className="font-mono text-lg font-semibold text-amber-300">
                 {ratio}x
               </span>{' '}
               real cases per official case
+              {headline && <span className="block text-[11px] text-slate-500">measured over a {headline.days} day run</span>}
             </>
           )}
         </span>
       </header>
+
+      {headline && (
+        <p data-testid="outbreak-live-label" className="mt-2 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+          Right now in the city, day {day}
+        </p>
+      )}
 
       <div className="mt-2 grid grid-cols-3 gap-2 text-center text-xs">
         <div className="rounded-md bg-slate-800/60 p-1.5">
