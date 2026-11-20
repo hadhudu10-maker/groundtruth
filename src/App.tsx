@@ -3,6 +3,9 @@ import { CityCrossSection, Legend, ProblemRail, SimControls, useSim } from './ui
 import { WarningPanel, useWarningProof } from './canary'
 import { FAIRSHARE_SCENARIO_LABEL, FairSplitPanel, measureFairShare } from './fairshare'
 import { NotebookPanel, OUTBREAK_SCENARIO, OutbreakPanel, useLedgerProof, useOutbreakReport } from './ledger'
+import { LotteryPanel, SurfacePanel, lotteryProof, surfaceProof } from './ascent'
+// Straight from the file, not './murmur', so the sound and QR libraries stay out of the dashboard bundle.
+import { SpreadPanel, useSpreadProof } from './murmur/SpreadPanel'
 
 const DevTest = lazy(() => import('./murmur/DevTest'))
 const PassItOn = lazy(() => import('./murmur/PassItOn'))
@@ -36,6 +39,10 @@ function Dashboard() {
   const warning = useWarningProof()
   // Problem 2's number and bars come from one fixed shortage week, so they never drift (a few ms).
   const fair = useMemo(() => measureFairShare(), [])
+  // Problems 7 and 8: 200 seeded spread runs, measured in a worker.
+  const spread = useSpreadProof()
+  // Problems 13 and 14: 500 seeded surface runs and 200 re-runs of the draw (about 0.2 s together).
+  const ascentProof = useMemo(() => ({ ...surfaceProof(), ...lotteryProof() }), [])
 
   return (
     <main className="mx-auto max-w-6xl p-3 sm:p-5">
@@ -56,6 +63,7 @@ function Dashboard() {
             onReset={reset}
           />
           <CityCrossSection city={state} selectedId={selectedId} onSelect={setSelectedId} />
+          <SpreadPanel summary={spread.summary} />
           <WarningPanel state={state} observations={sim.observations()} measured={warning.report} pending={!warning.report} />
           <FairSplitPanel state={fair.state} proof={fair.proof} caption={FAIRSHARE_SCENARIO_LABEL} />
           <OutbreakPanel
@@ -63,10 +71,12 @@ function Dashboard() {
             headline={{ ratio: ledgerProof.outbreakUndercountRatio, days: OUTBREAK_SCENARIO.hours / 24 }}
           />
           <NotebookPanel notebook={outbreak.notebook} />
+          <SurfacePanel />
+          <LotteryPanel proof={ascentProof} />
         </div>
         <div className="flex flex-col gap-3">
           <Legend />
-          <ProblemRail proof={{ ...proof, ...fair.proof, ...ledgerProof, ...warning.proof }} />
+          <ProblemRail proof={{ ...proof, ...fair.proof, ...ledgerProof, ...warning.proof, ...spread.proof, ...ascentProof }} />
         </div>
       </div>
     </main>
