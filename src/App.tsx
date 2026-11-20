@@ -1,5 +1,8 @@
 import { lazy, Suspense, useState } from 'react'
 import { CityCrossSection, Legend, ProblemRail, SimControls, useSim } from './ui'
+import { WarningPanel, useWarningProof } from './canary'
+import { FairSplitPanel } from './fairshare'
+import { NotebookPanel, OUTBREAK_SCENARIO, OutbreakPanel, useLedgerProof, useOutbreakReport } from './ledger'
 
 const DevTest = lazy(() => import('./murmur/DevTest'))
 const PassItOn = lazy(() => import('./murmur/PassItOn'))
@@ -25,6 +28,12 @@ export default function App() {
 function Dashboard() {
   const { sim, state, proof, playing, setPlaying, reset } = useSim()
   const [selectedId, setSelectedId] = useState(sim.levelCount)
+  // The live sim's sick lists, signed into a notebook once per simulated day.
+  const outbreak = useOutbreakReport(sim, state)
+  // Rail numbers for problems 4 and 9 come from fixed harness runs, measured in a worker.
+  const ledgerProof = useLedgerProof()
+  // Problem 1's lead time is the median over 500 seeded runs, measured in a worker.
+  const warning = useWarningProof()
 
   return (
     <main className="mx-auto max-w-6xl p-3 sm:p-5">
@@ -45,10 +54,17 @@ function Dashboard() {
             onReset={reset}
           />
           <CityCrossSection city={state} selectedId={selectedId} onSelect={setSelectedId} />
+          <WarningPanel state={state} observations={sim.observations()} measured={warning.report} pending={!warning.report} />
+          <FairSplitPanel state={state} proof={proof} />
+          <OutbreakPanel
+            report={outbreak}
+            headline={{ ratio: ledgerProof.outbreakUndercountRatio, days: OUTBREAK_SCENARIO.hours / 24 }}
+          />
+          <NotebookPanel notebook={outbreak.notebook} />
         </div>
         <div className="flex flex-col gap-3">
           <Legend />
-          <ProblemRail proof={proof} />
+          <ProblemRail proof={{ ...proof, ...ledgerProof, ...warning.proof }} />
         </div>
       </div>
     </main>

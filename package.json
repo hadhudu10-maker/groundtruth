@@ -16,6 +16,7 @@
     "@noble/hashes": "^2.4.0",
     "framer-motion": "^14.14.0",
     "ggwave": "^0.4.0",
+    "javascript-lp-solver": "^1.0.3",
     "lucide-react": "^1.74.0",
     "pure-rand": "^8.4.2",
     "qr": "^0.7.2",
