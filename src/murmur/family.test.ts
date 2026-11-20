@@ -60,47 +60,55 @@ describe('family plaintext: status plus a short message, 27 bytes at most', () =
 
 describe('sealing with AES-GCM and the family key', () => {
   const author = '0123456789abcdef';
+  const STAMP = { seq: 7, time: NOW };
 
   it('seal then open gives the status back, and the sealed bytes fit the note', async () => {
     const fam = family();
-    const sealed = await sealFamily(fam, author, { condition: 'safe', level: 11, message: 'with Ana' });
+    const sealed = await sealFamily(fam, author, { condition: 'safe', level: 11, message: 'with Ana' }, STAMP);
     expect(sealed.length).toBe(12 + 2 + 8 + 16);
     expect(sealed.length).toBeLessThanOrEqual(FAMILY_MAX_SEALED_BYTES);
-    expect(await openFamily(fam, author, sealed)).toEqual({ condition: 'safe', level: 11, message: 'with Ana' });
+    expect(await openFamily(fam, author, sealed, STAMP)).toEqual({ condition: 'safe', level: 11, message: 'with Ana' });
   });
 
   it('a full message still fits in 55 bytes', async () => {
-    const sealed = await sealFamily(family(), author, { condition: 'moving', level: 200, message: 'x'.repeat(80) });
+    const sealed = await sealFamily(family(), author, { condition: 'moving', level: 200, message: 'x'.repeat(80) }, STAMP);
     expect(sealed.length).toBe(FAMILY_MAX_SEALED_BYTES);
   });
 
   it('uses a fresh nonce each time, so the same status never looks the same twice', async () => {
     const fam = family();
-    const a = await sealFamily(fam, author, { condition: 'safe', level: 2, message: '' });
-    const b = await sealFamily(fam, author, { condition: 'safe', level: 2, message: '' });
+    const a = await sealFamily(fam, author, { condition: 'safe', level: 2, message: '' }, STAMP);
+    const b = await sealFamily(fam, author, { condition: 'safe', level: 2, message: '' }, STAMP);
     expect(a).not.toEqual(b);
   });
 
   it('the wrong key cannot open it', async () => {
-    const sealed = await sealFamily(family('A'), author, { condition: 'safe', level: 4, message: '' });
-    expect(await openFamily(family('B'), author, sealed)).toBeNull();
+    const sealed = await sealFamily(family('A'), author, { condition: 'safe', level: 4, message: '' }, STAMP);
+    expect(await openFamily(family('B'), author, sealed, STAMP)).toBeNull();
   });
 
   it('any changed byte (nonce, ciphertext or tag) makes it fail', async () => {
     const fam = family();
-    const sealed = await sealFamily(fam, author, { condition: 'help', level: 7, message: 'water' });
+    const sealed = await sealFamily(fam, author, { condition: 'help', level: 7, message: 'water' }, STAMP);
     for (const i of [0, 11, 12, 14, sealed.length - 1]) {
       const bad = sealed.slice();
       bad[i]! ^= 0x01;
-      expect(await openFamily(fam, author, bad)).toBeNull();
+      expect(await openFamily(fam, author, bad, STAMP)).toBeNull();
     }
-    expect(await openFamily(fam, author, sealed.slice(0, 20))).toBeNull();
+    expect(await openFamily(fam, author, sealed.slice(0, 20), STAMP)).toBeNull();
   });
 
   it('is bound to its author: the same sealed bytes under another key ID do not open', async () => {
     const fam = family();
-    const sealed = await sealFamily(fam, author, { condition: 'safe', level: 5, message: '' });
-    expect(await openFamily(fam, 'fedcba9876543210', sealed)).toBeNull();
+    const sealed = await sealFamily(fam, author, { condition: 'safe', level: 5, message: '' }, STAMP);
+    expect(await openFamily(fam, 'fedcba9876543210', sealed, STAMP)).toBeNull();
+  });
+
+  it('is bound to the note\'s seq and time: the same sealed bytes under a newer header do not open', async () => {
+    const fam = family();
+    const sealed = await sealFamily(fam, author, { condition: 'help', level: 5, message: '' }, STAMP);
+    expect(await openFamily(fam, author, sealed, { seq: STAMP.seq, time: STAMP.time + 3600 })).toBeNull();
+    expect(await openFamily(fam, author, sealed, { seq: STAMP.seq + 1, time: STAMP.time })).toBeNull();
   });
 });
 
@@ -200,6 +208,28 @@ describe('family notes travel like any other note', () => {
     const board = await readFamily(fam, cousin.store);
     expect(board).toHaveLength(1);
     expect(board[0]).toMatchObject({ condition: 'help', verified: false });
+  });
+
+  it('an old status re-wrapped with a newer time by someone without the key does not replace the real newest one', async () => {
+    // Security review 2026-11-20: Mum has not paired with Ana, so she cannot check Ana's signature.
+    // An outsider who overheard Ana's old "hurt" note copies its sealed bytes into a header that claims
+    // Ana as author with a newer time and seq, and a junk signature.
+    const ana = resident('Ana', 11);
+    const mum = resident('Mum', 3);
+    const fam = family();
+    const old = await writeFamilyNote(ana.device, fam, { condition: 'hurt', level: 11, message: '' }, NOW - 7200);
+    const now = await writeFamilyNote(ana.device, fam, { condition: 'safe', level: 10, message: '' }, NOW - 60);
+    const forged = new Uint8Array(old.bytes);
+    const view = new DataView(forged.buffer);
+    view.setUint32(9, now.seq + 5); // seq
+    view.setUint32(13, NOW); // time, newer than Ana's real newest note
+    expect(mum.store.receive(old.bytes).kind).toBe('parked');
+    expect(mum.store.receive(now.bytes).kind).toBe('parked');
+    expect(mum.store.receive(forged).kind).toBe('parked');
+
+    const board = await readFamily(fam, mum.store);
+    expect(board).toHaveLength(1);
+    expect(board[0]).toMatchObject({ condition: 'safe', level: 10, time: NOW - 60, verified: false });
   });
 
   it('the family note is a normal 140 byte note at most', async () => {
