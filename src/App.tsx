@@ -1,7 +1,20 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { CityCrossSection, Legend, ProblemRail, SimControls, useSim } from './ui'
 
+const DevTest = lazy(() => import('./murmur/DevTest'))
+
 export default function App() {
+  if (location.hash === '#devtest') {
+    return (
+      <Suspense fallback={<p className="p-4 text-slate-400">Loading device tests...</p>}>
+        <DevTest />
+      </Suspense>
+    )
+  }
+  return <Dashboard />
+}
+
+function Dashboard() {
   const { sim, state, proof, playing, setPlaying, reset } = useSim()
   const [selectedId, setSelectedId] = useState(sim.levelCount)
 
