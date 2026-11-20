@@ -125,6 +125,23 @@ describe('the draw', () => {
     });
   });
 
+  test('the organizer cannot grind the close digest with volunteer notes of its own', () => {
+    // Security review 2026-11-20: the organizer knows the seed before the close. If its own volunteer
+    // notes counted, each new seq would give a new close digest and a new crew to choose from.
+    const s = setup();
+    const base = runDraw(notebookFrom(s.all), s.organizer.keyId, s.k);
+    if (!base.ok) throw new Error(base.reason);
+    for (let seq = 10; seq < 40; seq++) {
+      const own = volunteerNote(s.organizer, seq, T0 + 20);
+      const close = closeNote(s.organizer, s.commit, [...s.vols, own], 2, s.closeTime);
+      expect(close.body).toEqual(s.close.body); // the digest ignores the organizer's note
+      const r = runDraw(notebookFrom([s.commit, ...s.vols, own, close, s.reveal]), s.organizer.keyId, s.k);
+      if (!r.ok) throw new Error(r.reason);
+      expect(r.entrants).not.toContain(s.organizer.keyId);
+      expect(r.crew).toEqual(base.crew);
+    }
+  });
+
   test('a copy missing a volunteer cannot reproduce the published close', () => {
     const s = setup();
     const r = runDraw(notebookFrom(s.all.filter((n) => n !== s.vols[3])), s.organizer.keyId, s.k);
